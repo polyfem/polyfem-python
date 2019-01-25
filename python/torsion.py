@@ -7,7 +7,6 @@ import Problems
 
 
 mesh_path = "../3rdparty/data/square_beam_h.HYBRID"
-tag_path = "../3rdparty/data/square_beam_h.txt"
 
 settings = Settings.Settings()
 settings.discr_order = 1
@@ -37,7 +36,7 @@ solver = polyfempy.Solver()
 
 
 solver.settings(settings.serialize())
-solver.load_mesh(mesh_path, tag_path)
+solver.load_mesh(mesh_path)
 
 solver.solve()
 

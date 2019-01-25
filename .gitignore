@@ -5,6 +5,6 @@ bin_rel/
 copy_lib
 *.sublime-project
 __pycache__
-test.obj
+*.obj
 *.pyc
 *.vtu

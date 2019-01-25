@@ -4,8 +4,8 @@ import Problems
 
 
 
-mesh_path = "../3rdparty/data/square_beam_h.HYBRID"
-tag_path = "../3rdparty/data/square_beam_h.txt"
+mesh_path = "/../3rdparty/data/square_beam.mesh"
+tag_path = "../3rdparty/data/square_beam.txt"
 
 settings = Settings.Settings()
 settings.discr_order = 1
@@ -30,11 +30,8 @@ settings.set_problem(problem)
 
 
 solver = polyfempy.Solver()
-solver.set_log_level(0)
 
-
-
-solver.load_parameters(settings.serialize())
+solver.settings(settings.serialize())
 solver.load_mesh(mesh_path, tag_path)
 
 solver.solve()

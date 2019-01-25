@@ -25,9 +25,9 @@ PYBIND11_MODULE(polyfempy, m) {
 
 	py::class_<polyfem::State>(m, "Solver")
 	.def(py::init<>())
-	.def("load_parameters", [](polyfem::State &s, const std::string &json) {
+	.def("settings", [](polyfem::State &s, const std::string &json) {
 		s.init(json::parse(json));
-	}, 																"load PDE and problem parameters from a json")
+	}, 																"load PDE and problem parameters from the settings")
 
 	.def("set_log_level", [](polyfem::State &s, int log_level) {
 		log_level = std::max(0, std::min(6, log_level));
@@ -75,7 +75,7 @@ PYBIND11_MODULE(polyfempy, m) {
 		s.save_json(ss);
 		return ss.str();
 	},																"gets the log as json")
-	.def("export_data", 	&polyfem::State::export_data,			"exports all data specified in the json")
+	.def("export_data", 	&polyfem::State::export_data,			"exports all data specified in the settings")
 	.def("export_vtu",	 	&polyfem::State::save_vtu,				"exports the solution as vtu")
 	.def("export_wire", 	&polyfem::State::save_wire,				"exports wireframe of the mesh")
 

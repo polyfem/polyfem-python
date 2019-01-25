@@ -6,13 +6,16 @@ import Problems
 
 
 
+solver = polyfempy.Solver()
+
+
 #some setup
 mesh_path = "../3rdparty/data/circle2.msh"
-output = "test.obj"
+output = "inflation.obj"
 
 settings = Settings.Settings()
 settings.discr_order = 2
-settings.normalize_mesh = False
+settings.normalize_mesh = True
 settings.vismesh_rel_area = 0.00001
 settings.scalar_formulation = polyfempy.ScalarFormulations.Laplacian
 
@@ -22,28 +25,23 @@ problem.rhs = 0
 settings.set_problem(problem)
 
 
-##########################################################################
-solver = polyfempy.Solver()
-solver.set_log_level(0)
-##########################################################################
 
-
-solver.load_parameters(settings.serialize())
+solver.settings(settings.serialize())
 solver.load_mesh(mesh_path)
 
 solver.solve()
-
 sol = solver.get_solution()
 ##########################################################################
 
-#now we got the solution of the first laplacian, we use it as rhs for the second one
-#setup zero bc and use sol as rhs
+# now we got the solution of the first laplacian, we use it as rhs for the second one
+# setup zero bc and use sol as rhs
 problem = Problems.GenericScalar()
 problem.add_dirichlet_value("all", 0)
 problem.rhs = 0
+settings.set_problem(problem)
 
 #reload the parameters and mesh
-solver.load_parameters(settings.serialize())
+solver.settings(settings.serialize())
 solver.load_mesh(mesh_path)
 
 #set the rhs as prev sol

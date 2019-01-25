@@ -67,7 +67,7 @@ class GenericTensor:
 		self.dirichlet_boundary = []
 		self.neumann_boundary = []
 
-	def add_dirichlet_value(self, id, value, is_dirichlet_dim):
+	def add_dirichlet_value(self, id, value, is_dirichlet_dim=None):
 		assert(len(value) == 3)
 		tmp = {}
 		tmp["id"] = id

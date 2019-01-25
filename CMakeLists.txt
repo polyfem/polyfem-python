@@ -65,6 +65,10 @@ polyfem_python_download_pybind11()
 add_subdirectory(${THIRD_PARTY_DIR}/pybind11)
 
 
+#for testing purpose
+polyfem_python_download_data()
+
+
 ################################################################################
 # Subdirectories
 ################################################################################

@@ -27,7 +27,7 @@ endfunction()
 function(polyfem_python_download_polyfem)
     polyfem_python_download_project(polyfem
         GIT_REPOSITORY https://github.com/polyfem/polyfem.git
-        GIT_TAG        head
+        GIT_TAG        5fc7d3d4288d165cf1ef605f8495b768a880359e
     )
 endfunction()
 
@@ -35,5 +35,13 @@ function(polyfem_python_download_pybind11)
     polyfem_python_download_project(pybind11
         GIT_REPOSITORY https://github.com/pybind/pybind11.git
         GIT_TAG        085a29436a8c472caaaf7157aa644b571079bcaa
+    )
+endfunction()
+
+## data
+function(polyfem_python_download_data)
+    polyfem_python_download_project(data
+        GIT_REPOSITORY https://github.com/polyfem/polyfem-data.git
+        GIT_TAG        88f5388a6a77b6f1b1a755a510b632a26efab950
     )
 endfunction()

@@ -7,3 +7,4 @@ copy_lib
 __pycache__
 test.obj
 *.pyc
+*.vtu

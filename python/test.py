@@ -7,18 +7,17 @@ import Problems
 
 
 #some setup
-mesh_path = "/Users/teseo/Desktop/Higher_Order_Meshes/apps/inflate/meshes/rocket.msh"
-bc_tag_path = "/Users/teseo/Desktop/Higher_Order_Meshes/apps/inflate/meshes/rocket.txt"
+mesh_path = "../3rdparty/data/circle2.msh"
 output = "test.obj"
 
 settings = Settings.Settings()
 settings.discr_order = 2
 settings.normalize_mesh = False
-settings.vismesh_rel_area = 0.01
+settings.vismesh_rel_area = 0.00001
 settings.scalar_formulation = polyfempy.ScalarFormulations.Laplacian
 
-problem  = Problems.GenericScalar()
-problem.add_dirichlet_value("all", 0.01)
+problem = Problems.GenericScalar()
+problem.add_dirichlet_value("all", 10)
 problem.rhs = 0
 settings.set_problem(problem)
 
@@ -30,7 +29,7 @@ solver.set_log_level(0)
 
 
 solver.load_parameters(settings.serialize())
-solver.load_mesh(mesh_path, bc_tag_path)
+solver.load_mesh(mesh_path)
 
 solver.solve()
 
@@ -39,13 +38,13 @@ sol = solver.get_solution()
 
 #now we got the solution of the first laplacian, we use it as rhs for the second one
 #setup zero bc and use sol as rhs
-problem  = Problems.GenericScalar()
+problem = Problems.GenericScalar()
 problem.add_dirichlet_value("all", 0)
 problem.rhs = 0
 
 #reload the parameters and mesh
 solver.load_parameters(settings.serialize())
-solver.load_mesh(mesh_path, bc_tag_path)
+solver.load_mesh(mesh_path)
 
 #set the rhs as prev sol
 solver.set_rhs(sol)

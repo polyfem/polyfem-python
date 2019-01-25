@@ -13,6 +13,7 @@ class Settings:
 
 		self.n_refs = 0
 		self.vismesh_rel_area = 0.00001
+		self.nl_solver_rhs_steps = 1
 
 
 

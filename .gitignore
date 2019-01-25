@@ -2,3 +2,8 @@ bin/
 bin_rel/
 3rdparty/
 *.sublime-workspace
+copy_lib
+*.sublime-project
+__pycache__
+test.obj
+*.pyc

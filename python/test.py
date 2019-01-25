@@ -1,9 +1,9 @@
 import polyfempy
-import json
 import numpy as np
+import Settings
+import Problems
 
-with open("test.json", 'r') as f:
-	problem_params = json.load(f)
+
 
 
 #some setup
@@ -11,10 +11,17 @@ mesh_path = "/Users/teseo/Desktop/Higher_Order_Meshes/apps/inflate/meshes/rocket
 bc_tag_path = "/Users/teseo/Desktop/Higher_Order_Meshes/apps/inflate/meshes/rocket.txt"
 output = "test.obj"
 
-problem_params["discr_order"] = 2
+settings = Settings.Settings()
+settings.discr_order = 2
+settings.normalize_mesh = False
+settings.vismesh_rel_area = 0.01
+settings.scalar_formulation = polyfempy.ScalarFormulations.Laplacian
 
-#density of the output mesh
-problem_params["vismesh_rel_area"] = 0.01
+problem  = Problems.GenericScalar()
+problem.add_dirichlet_value("all", 0.01)
+problem.rhs = 0
+settings.set_problem(problem)
+
 
 ##########################################################################
 solver = polyfempy.Solver()
@@ -22,11 +29,7 @@ solver.set_log_level(0)
 ##########################################################################
 
 
-#first solve problem with 0 rhs and some bc on the edges
-problem_params["problem_params"]["dirichlet_boundary"][0]["value"] = 0.01
-problem_params["problem_params"]["rhs"] = 0
-
-solver.load_parameters(json.dumps(problem_params))
+solver.load_parameters(settings.serialize())
 solver.load_mesh(mesh_path, bc_tag_path)
 
 solver.solve()
@@ -35,12 +38,13 @@ sol = solver.get_solution()
 ##########################################################################
 
 #now we got the solution of the first laplacian, we use it as rhs for the second one
-
 #setup zero bc and use sol as rhs
-problem_params["problem_params"]["dirichlet_boundary"][0]["value"] = 0
+problem  = Problems.GenericScalar()
+problem.add_dirichlet_value("all", 0)
+problem.rhs = 0
 
 #reload the parameters and mesh
-solver.load_parameters(json.dumps(problem_params))
+solver.load_parameters(settings.serialize())
 solver.load_mesh(mesh_path, bc_tag_path)
 
 #set the rhs as prev sol

@@ -1,4 +1,5 @@
 #include <polyfem/State.hpp>
+#include <polyfem/AssemblerUtils.hpp>
 #include <polyfem/Logger.hpp>
 
 #include <pybind11/pybind11.h>
@@ -6,16 +7,21 @@
 
 namespace py = pybind11;
 
-
-int add(int i, int j) {
-	return i + j;
-}
+class ScalarAssemblers { };
+class TensorAssemblers { };
 
 PYBIND11_MODULE(polyfempy, m) {
+	const auto &sa = py::class_<ScalarAssemblers>(m, "ScalarFormulations");
+	for(auto &a : polyfem::AssemblerUtils::instance().scalar_assemblers())
+		sa.attr(a.c_str()) = a;
+
+	const auto &ta = py::class_<TensorAssemblers>(m, "TensorFormulations");
+	for(auto &a : polyfem::AssemblerUtils::instance().tensor_assemblers())
+		ta.attr(a.c_str()) = a;
+
+
 	//TODO:
 	// load mesh with lambda and V, F
-	// out of vis mesh and evals of sol and pressure
-	// load rhs form file or numpy
 
 	py::class_<polyfem::State>(m, "Solver")
 	.def(py::init<>())

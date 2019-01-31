@@ -2,7 +2,7 @@ import polyfempy as pf
 
 
 
-mesh_path = "/../3rdparty/data/square_beam.mesh"
+mesh_path = "../3rdparty/data/square_beam.mesh"
 tag_path = "../3rdparty/data/square_beam.txt"
 
 settings = pf.Settings()

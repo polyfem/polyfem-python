@@ -1,25 +1,23 @@
-import polyfempy
+import polyfempy as pf
 import numpy as np
-import Settings
-import Problems
 
 
 
 
-solver = polyfempy.Solver()
+solver = pf.Solver()
 
 
 #some setup
 mesh_path = "../3rdparty/data/circle2.msh"
 output = "inflation.obj"
 
-settings = Settings.Settings()
+settings = pf.Settings()
 settings.discr_order = 2
 settings.normalize_mesh = True
 settings.vismesh_rel_area = 0.00001
-settings.scalar_formulation = polyfempy.ScalarFormulations.Laplacian
+settings.scalar_formulation = pf.ScalarFormulations.Laplacian
 
-problem = Problems.GenericScalar()
+problem = pf.GenericScalar()
 problem.add_dirichlet_value("all", 10)
 problem.rhs = 0
 settings.set_problem(problem)
@@ -35,7 +33,7 @@ sol = solver.get_solution()
 
 # now we got the solution of the first laplacian, we use it as rhs for the second one
 # setup zero bc and use sol as rhs
-problem = Problems.GenericScalar()
+problem = pf.GenericScalar()
 problem.add_dirichlet_value("all", 0)
 problem.rhs = 0
 settings.set_problem(problem)

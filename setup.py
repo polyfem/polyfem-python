@@ -36,7 +36,17 @@ class CMakeBuild(build_ext):
     def build_extension(self, ext):
         extdir = os.path.join(os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name))),"polyfempy")
 
-        cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir, '-DPYTHON_EXECUTABLE=' + sys.executable, '-DENABLE_PARDISO=OFF']
+        cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir, '-DPYTHON_EXECUTABLE=' + sys.executable,
+                      '-DENABLE_PARDISO=OFF',
+                      '-DLIBIGL_WITH_OPENGL=OFF',
+                      '-DLIBIGL_WITH_OPENGL_GLFW=OFF',
+                      '-DLIBIGL_WITH_OPENGL_GLFW_IMGUI=OFF',
+                      '-DLIBIGL_WITH_PNG=OFF',
+                      '-DLIBIGL_WITH_PNG=OFF',
+                      '-DLIBIGL_WITH_VIEWER=OFF',
+                      '-DGEOGRAM_WITH_GRAPHICS=OFF',
+                      '-DPOLYFEM_WITH_APPS=OFF',
+                      '-DPOLYFEM_WITH_MISC=OFF']
 
         cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]

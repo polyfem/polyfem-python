@@ -29,7 +29,7 @@ class InflationTest(unittest.TestCase):
 
 
 
-		solver.settings(settings.serialize())
+		solver.settings(settings)
 		solver.load_mesh(mesh_path)
 
 		solver.solve()

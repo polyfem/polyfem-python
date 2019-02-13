@@ -37,7 +37,7 @@ class TorsionTest(unittest.TestCase):
 		solver = pf.Solver()
 
 
-		solver.settings(settings.serialize())
+		solver.settings(str(settings))
 		solver.load_mesh(mesh_path)
 
 		solver.solve()

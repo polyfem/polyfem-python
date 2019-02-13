@@ -1,18 +1,10 @@
 ################################################################################
 cmake_minimum_required(VERSION 3.1)
-project(PolyFEMpy)
+project(polyfempy)
 ################################################################################
-
-# Detects whether this is a top-level project
-if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-	set(POLYFEM_PYTHON_TOPLEVEL_PROJECT ON)
-else()
-	set(POLYFEM_PYTHON_TOPLEVEL_PROJECT OFF)
-endif()
 
 set(THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-list(APPEND CMAKE_MODULE_PATH ${THIRD_PARTY_DIR}/Catch2/contrib)
 
 # Color output
 include(UseColors)

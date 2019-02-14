@@ -3,6 +3,8 @@
 #################################################
 ############Scalar###############################
 class Franke:
+	"""Franke problem with exact solution https://polyfem.github.io/documentation/#franke"""
+
 	def name(self):
 		return "Franke"
 
@@ -11,18 +13,24 @@ class Franke:
 
 
 class GenericScalar:
+	"""Generic scalar problem https://polyfem.github.io/documentation/#genericscalar"""
+
 	def __init__(self):
 		self.rhs = 0
 		self.dirichlet_boundary = []
 		self.neumann_boundary = []
 
 	def add_dirichlet_value(self, id, value):
+		"""add the Dirichlet value value for the sideset id"""
+
 		tmp = {}
 		tmp["id"] = id
 		tmp["value"] = value
 		self.dirichlet_boundary.append(tmp)
 
 	def add_neumann_value(self, id, value):
+		"""add the Neumann value value for the sideset id"""
+
 		tmp = {}
 		tmp["id"] = id
 		tmp["value"] = value
@@ -38,6 +46,8 @@ class GenericScalar:
 #################################################
 ############Elasticity###########################
 class Gravity:
+	"""time dependent gravity problem https://polyfem.github.io/documentation/#gravity"""
+
 	def name(self):
 		return "Gravity"
 
@@ -46,6 +56,8 @@ class Gravity:
 
 
 class Torsion:
+	"""3D torsion problem, specify which sideset to fix (fixed_boundary) and which one turns turning_boundary https://polyfem.github.io/documentation/#torsionelastic"""
+
 	def __init__(self):
 		self.axis_coordiante = 2
 		self.n_turns = 0.5
@@ -62,12 +74,15 @@ class Torsion:
 
 
 class GenericTensor:
+	"""Generic tensor problem https://polyfem.github.io/documentation/#generictensor"""
+
 	def __init__(self):
 		self.rhs = [0, 0, 0]
 		self.dirichlet_boundary = []
 		self.neumann_boundary = []
 
 	def add_dirichlet_value(self, id, value, is_dirichlet_dim=None):
+		"""add the Dirichlet value value for the sideset id. Note the value must be a vector in 2D or 3D depending on the problem. is_dirichlet_dim is a vector of boolean specifying which dimentions are fixed."""
 		assert(len(value) == 3)
 		tmp = {}
 		tmp["id"] = id
@@ -79,6 +94,8 @@ class GenericTensor:
 		self.dirichlet_boundary.append(tmp)
 
 	def add_neumann_value(self, id, value):
+		"""add the Neumann value value for the sideset id. Note the value must be a vector in 2D or 3D depending on the problem"""
+
 		tmp = {}
 		tmp["id"] = id
 		tmp["value"] = value
@@ -94,6 +111,8 @@ class GenericTensor:
 #################################################
 ############Stokes###############################
 class Flow:
+	"""Inflow/outflow problem for fluids. You can specify the sideset for the moving fluxes and the list of obstacle sidesets. https://polyfem.github.io/documentation/#flow"""
+
 	def __init__(self):
 		self.inflow = 1
 		self.outflow = 3
@@ -109,6 +128,8 @@ class Flow:
 
 
 class DrivenCavity:
+	"""Classical driven cavity problem in fluid simulation"""
+
 	def name(self):
 		return "DrivenCavity"
 

@@ -83,12 +83,12 @@ class GenericTensor:
 
 	def add_dirichlet_value(self, id, value, is_dirichlet_dim=None):
 		"""add the Dirichlet value value for the sideset id. Note the value must be a vector in 2D or 3D depending on the problem. is_dirichlet_dim is a vector of boolean specifying which dimentions are fixed."""
-		assert(len(value) == 3)
+		assert(len(value) == 3 or len(value) == 2)
 		tmp = {}
 		tmp["id"] = id
 		tmp["value"] = value
 		if is_dirichlet_dim is not None:
-			assert(len(is_dirichlet_dim) == 3)
+			assert(len(is_dirichlet_dim) == 3 or len(is_dirichlet_dim) == 2)
 			tmp["dimension"] = is_dirichlet_dim
 
 		self.dirichlet_boundary.append(tmp)

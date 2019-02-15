@@ -7,7 +7,11 @@ import numpy as np
 def plot(vertices, connectivity, function):
     x = vertices[:,0]
     y = vertices[:,1]
-    z = vertices[:,2]
+
+    if vertices.shape[1] == 3:
+        z = vertices[:,2]
+    else:
+        z = np.zeros(x.shape, dtype=x.dtype)
 
     if connectivity.shape[1] == 3:
         f = connectivity

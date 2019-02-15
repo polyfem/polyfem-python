@@ -3,7 +3,7 @@ import unittest
 import polyfempy as pf
 import numpy as np
 
-import utils
+from .utils import plot
 
 import os
 
@@ -16,7 +16,6 @@ class InflationTest(unittest.TestCase):
 		dir_path = os.path.dirname(os.path.realpath(__file__))
 		mesh_path = os.path.join(dir_path, "../3rdparty/data/circle2.msh")
 		print(mesh_path)
-		output = "inflation.obj"
 
 		settings = pf.Settings()
 		settings.discr_order = 2
@@ -72,7 +71,7 @@ class InflationTest(unittest.TestCase):
 		for i in range(len(vv)):
 			vv[i] = np.array([vertices[i][0], vertices[i][1], sol[resi[i]][0]])
 
-		utils.plot(vv, faces, None)
+		plot(vv, faces, None)
 
 		# #save obj
 		# with open(output, "w") as file:

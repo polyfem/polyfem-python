@@ -26,7 +26,9 @@ def plot(vertices, connectivity, function):
     mesh = go.Mesh3d(x=x, y=y, z=z,
                      i=f[:,0], j=f[:,1], k=f[:,2],
                      intensity=function, flatshading=function is not None,
-                     hoverinfo="none")
+                     colorscale='Viridis',
+                     contour=dict(show=True, color='#fff'),
+                     hoverinfo="all")
     layout = go.Layout(scene=go.layout.Scene(aspectmode='data'))
     fig = go.Figure(data=[mesh], layout=layout)
 

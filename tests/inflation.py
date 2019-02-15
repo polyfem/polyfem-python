@@ -3,6 +3,8 @@ import unittest
 import polyfempy as pf
 import numpy as np
 
+import utils
+
 import os
 
 
@@ -61,18 +63,28 @@ class InflationTest(unittest.TestCase):
 		_, res = np.unique(vertices, axis=0, return_inverse=True)
 		vertices, resi = np.unique(vertices, axis=0, return_index=True)
 
+		faces = np.ndarray([len(tris), 3], dtype=np.int64)
+		vv = np.ndarray([len(vertices), 3], dtype=np.float64)
 
-		#save obj
-		with open(output, "w") as file:
-			# use sol as z
-			for i in range(len(vertices)):
-				file.write("v {} {} {}\n".format(vertices[i][0], vertices[i][1], sol[resi[i]][0]))
+		for i in range(len(tris)):
+			faces[i] = np.array([res[tris[i][0]], res[tris[i][1]], res[tris[i][2]]])
 
-			for i in range(len(tris)):
-				i0 = res[tris[i][0]]
-				i1 = res[tris[i][1]]
-				i2 = res[tris[i][2]]
-				file.write("f {} {} {}\n".format(i0+1, i1+1, i2+1))
+		for i in range(len(vv)):
+			vv[i] = np.array([vertices[i][0], vertices[i][1], sol[resi[i]][0]])
+
+		utils.plot(vv, faces, None)
+
+		# #save obj
+		# with open(output, "w") as file:
+		# 	# use sol as z
+		# 	for i in range(len(vertices)):
+		# 		file.write("v {} {} {}\n".format())
+
+		# 	for i in range(len(tris)):
+		# 		i0 = res[tris[i][0]]
+		# 		i1 = res[tris[i][1]]
+		# 		i2 = res[tris[i][2]]
+		# 		file.write("f {} {} {}\n".format(i0+1, i1+1, i2+1))
 
 
 if __name__ == '__main__':

@@ -11,3 +11,4 @@ __pycache__
 *.vtu
 *.egg-info
 *.so
+temp-plot.html

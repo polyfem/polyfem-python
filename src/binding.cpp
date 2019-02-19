@@ -14,6 +14,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>
 #include <pybind11/functional.h>
+#include <pybind11/stl.h>
 
 namespace py = pybind11;
 
@@ -111,6 +112,11 @@ PYBIND11_MODULE(polyfempy, m) {
 		else
 			polyfem::to_geogram_mesh_3d(V, F, M);
 		s.load_mesh(M, [](const polyfem::RowVectorNd&){ return -1; }, true);
+
+		double boundary_id_threshold = s.args["boundary_id_threshold"];
+		if(boundary_id_threshold <= 0)
+			boundary_id_threshold = s.mesh->is_volume() ? 1e-2 : 1e-7;
+		s.mesh->compute_boundary_ids(boundary_id_threshold);
 	},
 	"Loads a mesh from vertices and connectivity",
 	py::arg("vertices"), py::arg("connectivity"))
@@ -162,7 +168,10 @@ PYBIND11_MODULE(polyfempy, m) {
 		s.assemble_rhs();
 		s.assemble_stiffness_mat();
 
+		s.solve_export_to_file = false;
+		s.solution_frames.clear();
 		s.solve_problem();
+		s.solve_export_to_file = true;
 	},
 	"solve the pde")
 
@@ -239,7 +248,80 @@ PYBIND11_MODULE(polyfempy, m) {
 		return py::make_tuple(fun, tfun);
 	},
 	"returns the von mises stresses and stress tensor averaged around a vertex on a densly sampled mesh, use 'vismesh_rel_area' to control density",
-	py::arg("boundary_only") = bool(false));
+	py::arg("boundary_only") = bool(false))
+
+
+
+
+	////////////////////////////////////////////////////////////////////////////////////////////
+	.def("get_sampled_points_frames", 	[](polyfem::State &s) {
+		assert(!s.solution_frames.empty());
+
+		std::vector<Eigen::MatrixXd> pts;
+
+		for(const auto &sol : s.solution_frames){
+			pts.push_back(sol.points);
+		}
+
+
+		return pts;
+	},
+	"returns the points frames for a time dependent problem on a densly sampled mesh, use 'vismesh_rel_area' to control density")
+
+	.def("get_sampled_connectivity_frames", 	[](polyfem::State &s) {
+		assert(!s.solution_frames.empty());
+
+		std::vector<Eigen::MatrixXi> tets;
+
+		for(const auto &sol : s.solution_frames)
+			tets.push_back(sol.connectivity);
+
+
+		return tets;
+	},
+	"returns the connectivity frames for a time dependent problem on a densly sampled mesh, use 'vismesh_rel_area' to control density")
+
+
+	.def("get_sampled_solution_frames", 	[](polyfem::State &s) {
+		assert(!s.solution_frames.empty());
+
+		std::vector<Eigen::MatrixXd> fun;
+
+		for(const auto &sol : s.solution_frames){
+			fun.push_back(sol.solution);
+		}
+
+
+		return fun;
+	},
+	"returns the solution frames for a time dependent problem on a densly sampled mesh, use 'vismesh_rel_area' to control density")
+
+	.def("get_sampled_mises_frames", 	[](polyfem::State &s) {
+		assert(!s.solution_frames.empty());
+
+		std::vector<Eigen::MatrixXd> mises;
+
+		for(const auto &sol : s.solution_frames)
+			mises.push_back(sol.scalar_value);
+
+		return mises;
+	},
+	"returns the von mises stresses frames on a densly sampled mesh, use 'vismesh_rel_area' to control density")
+
+	.def("get_sampled_mises_avg_frames", 	[](polyfem::State &s) {
+		assert(!s.solution_frames.empty());
+
+		std::vector<Eigen::MatrixXd> mises;
+
+		for(const auto &sol : s.solution_frames)
+			mises.push_back(sol.scalar_value_avg);
+
+		return mises;
+	},
+	"returns the von mises stresses per frame averaged around a vertex on a densly sampled mesh, use 'vismesh_rel_area' to control density");
+
+
+
 
 	solver.doc() = "Polyfem solver";
 

@@ -199,10 +199,16 @@ PYBIND11_MODULE(polyfempy, m) {
 		Eigen::MatrixXd discr;
 		Eigen::MatrixXd fun;
 
+		const bool tmp = s.args["export"]["vis_boundary_only"];
+		s.args["export"]["vis_boundary_only"] = boundary_only;
+
 		s.build_vis_mesh(points, tets, discr);
 
 
 		s.interpolate_function(points.rows(), s.sol, fun, boundary_only);
+
+		s.args["export"]["vis_boundary_only"] = tmp;
+
 		return  py::make_tuple(points, tets, fun);
 	},
 	"returns the solution on a densly sampled mesh, use 'vismesh_rel_area' to control density",
@@ -214,8 +220,13 @@ PYBIND11_MODULE(polyfempy, m) {
 		Eigen::MatrixXd discr;
 		Eigen::MatrixXd fun;
 
+		const bool tmp = s.args["export"]["vis_boundary_only"];
+		s.args["export"]["vis_boundary_only"] = boundary_only;
+
 		s.build_vis_mesh(points, tets, discr);
 		s.compute_tensor_value(points.rows(), s.sol, fun, boundary_only);
+
+		s.args["export"]["vis_boundary_only"] = tmp;
 
 		return fun;
 	},
@@ -228,8 +239,13 @@ PYBIND11_MODULE(polyfempy, m) {
 		Eigen::MatrixXd discr;
 		Eigen::MatrixXd fun;
 
+		const bool tmp = s.args["export"]["vis_boundary_only"];
+		s.args["export"]["vis_boundary_only"] = boundary_only;
+
 		s.build_vis_mesh(points, tets, discr);
 		s.compute_scalar_value(points.rows(), s.sol, fun, boundary_only);
+
+		s.args["export"]["vis_boundary_only"] = tmp;
 
 		return fun;
 	},
@@ -242,8 +258,13 @@ PYBIND11_MODULE(polyfempy, m) {
 		Eigen::MatrixXd discr;
 		Eigen::MatrixXd fun, tfun;
 
+		const bool tmp = s.args["export"]["vis_boundary_only"];
+		s.args["export"]["vis_boundary_only"] = boundary_only;
+
 		s.build_vis_mesh(points, tets, discr);
 		s.average_grad_based_function(points.rows(), s.sol, fun, tfun, boundary_only);
+
+		s.args["export"]["vis_boundary_only"] = tmp;
 
 		return py::make_tuple(fun, tfun);
 	},

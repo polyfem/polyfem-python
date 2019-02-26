@@ -82,20 +82,20 @@ PYBIND11_MODULE(polyfempy, m) {
 	"sets polyfem log level, valid value between 0 (all logs) and 6 (no logs)",
 	py::arg("log_level"))
 
-	.def("load_mesh", [](polyfem::State &s) {
+	.def("load_mesh_from_settings", [](polyfem::State &s) {
 		init_globals();
 		s.load_mesh();
 	},
 	"Loads a mesh from the 'mesh' field of the json and 'bc_tag' if any bc tags")
 
-	.def("load_mesh", [](polyfem::State &s, const std::string &path) {
+	.def("load_mesh_from_path", [](polyfem::State &s, const std::string &path) {
 		init_globals();
 		s.args["mesh"] = path;
 		s.load_mesh();
 	},
 	"Loads a mesh from the path and 'bc_tag' from the json if any bc tags",
 	py::arg("path"))
-	.def("load_mesh", [](polyfem::State &s, const std::string &path, const std::string &bc_tag) {
+	.def("load_mesh_from_path_and_tags", [](polyfem::State &s, const std::string &path, const std::string &bc_tag) {
 		init_globals();
 		s.args["mesh"] = path;
 		s.args["bc_tag"] = bc_tag;
@@ -106,17 +106,13 @@ PYBIND11_MODULE(polyfempy, m) {
 	.def("set_mesh", [](polyfem::State &s, const Eigen::MatrixXd &V, const Eigen::MatrixXi &F) {
 		init_globals();
 
-		GEO::Mesh M;
 		if(V.cols() == 2)
-			polyfem::to_geogram_mesh(V, F, M);
+			s.mesh = std::make_unique<polyfem::Mesh2D>();
 		else
-			polyfem::to_geogram_mesh_3d(V, F, M);
-		s.load_mesh(M, [](const polyfem::RowVectorNd&){ return -1; }, true);
+			s.mesh = std::make_unique<polyfem::Mesh3D>();
+		s.mesh->build_from_matrices(V, F);
 
-		double boundary_id_threshold = s.args["boundary_id_threshold"];
-		if(boundary_id_threshold <= 0)
-			boundary_id_threshold = s.mesh->is_volume() ? 1e-2 : 1e-7;
-		s.mesh->compute_boundary_ids(boundary_id_threshold);
+		s.load_mesh();
 	},
 	"Loads a mesh from vertices and connectivity",
 	py::arg("vertices"), py::arg("connectivity"))
@@ -142,7 +138,7 @@ PYBIND11_MODULE(polyfempy, m) {
 	py::arg("boundary_marker"))
 
 
-	.def("set_rhs", [](polyfem::State &s, std::string &path) {
+	.def("set_rhs_from_path", [](polyfem::State &s, std::string &path) {
 		init_globals();
 		s.args["rhs_path"] = path;
 	},

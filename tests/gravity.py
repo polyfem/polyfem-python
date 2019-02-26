@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 import polyfempy as pf
-from utils import plot
+from .utils import plot
 
 
 class Gravity(unittest.TestCase):

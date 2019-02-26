@@ -34,7 +34,7 @@ class BendingTest(unittest.TestCase):
         solver = pf.Solver()
 
         solver.settings(str(settings))
-        solver.load_mesh(mesh_path, tag_path)
+        solver.load_mesh_from_path_and_tags(mesh_path, tag_path)
 
         solver.solve()
 

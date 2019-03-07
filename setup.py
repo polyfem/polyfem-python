@@ -18,6 +18,9 @@ class CMakeExtension(Extension):
 
 class CMakeBuild(build_ext):
     def run(self):
+        if platform.system() == 'Darwin':
+            self.build_temp = self.build_temp.replace("build", "build.nosync")
+
         try:
             out = subprocess.check_output(['cmake', '--version'])
         except OSError:
@@ -80,7 +83,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="polyfempy",
-    version="0.2",
+    version="0.2.3",
     author="Teseo Schneider",
     author_email="",
     description="Polyfem Python Bindings",

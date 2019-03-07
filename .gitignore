@@ -1,4 +1,5 @@
 build/
+build.nosync/
 bin/
 bin_rel/
 3rdparty/

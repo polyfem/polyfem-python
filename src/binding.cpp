@@ -24,7 +24,7 @@ class TensorAssemblers { };
 
 
 namespace {
-	void init_globals()
+	void init_globals(polyfem::State &state)
 	{
 		static bool initialized = false;
 
@@ -48,6 +48,8 @@ namespace {
 			GEO::CmdLine::import_arg_group("pre");
 			GEO::CmdLine::import_arg_group("algo");
 
+			state.init_logger("", 2, false);
+
 			initialized = true;
 		}
 	}
@@ -68,14 +70,14 @@ PYBIND11_MODULE(polyfempy, m) {
 	.def(py::init<>())
 
 	.def("settings", [](polyfem::State &self, const std::string &json) {
-		init_globals();
+		init_globals(self);
 		self.init(json::parse(json));
 	},
 	"load PDE and problem parameters from the settings",
 	py::arg("json"))
 
 	.def("set_log_level", [](polyfem::State &s, int log_level) {
-		init_globals();
+		init_globals(s);
 		log_level = std::max(0, std::min(6, log_level));
 		spdlog::set_level(static_cast<spdlog::level::level_enum>(log_level));
 	},
@@ -83,20 +85,20 @@ PYBIND11_MODULE(polyfempy, m) {
 	py::arg("log_level"))
 
 	.def("load_mesh_from_settings", [](polyfem::State &s) {
-		init_globals();
+		init_globals(s);
 		s.load_mesh();
 	},
 	"Loads a mesh from the 'mesh' field of the json and 'bc_tag' if any bc tags")
 
 	.def("load_mesh_from_path", [](polyfem::State &s, const std::string &path) {
-		init_globals();
+		init_globals(s);
 		s.args["mesh"] = path;
 		s.load_mesh();
 	},
 	"Loads a mesh from the path and 'bc_tag' from the json if any bc tags",
 	py::arg("path"))
 	.def("load_mesh_from_path_and_tags", [](polyfem::State &s, const std::string &path, const std::string &bc_tag) {
-		init_globals();
+		init_globals(s);
 		s.args["mesh"] = path;
 		s.args["bc_tag"] = bc_tag;
 		s.load_mesh();
@@ -104,7 +106,7 @@ PYBIND11_MODULE(polyfempy, m) {
 	"Loads a mesh and bc_tags from path",
 	py::arg("path"), py::arg("bc_tag_path"))
 	.def("set_mesh", [](polyfem::State &s, const Eigen::MatrixXd &V, const Eigen::MatrixXi &F) {
-		init_globals();
+		init_globals(s);
 
 		if(V.cols() == 2)
 			s.mesh = std::make_unique<polyfem::Mesh2D>();
@@ -119,19 +121,19 @@ PYBIND11_MODULE(polyfempy, m) {
 
 
 	.def("set_boundary_side_set_from_bary", [](polyfem::State &s, const std::function<int(const polyfem::RowVectorNd&)> &boundary_marker) {
-		init_globals();
+		init_globals(s);
 		s.mesh->compute_boundary_ids(boundary_marker);
 	},
 	"Sets the side set for the boundary conditions, the functions takes the barycenter of the boundary (edge or face)",
 	py::arg("boundary_marker"))
 	.def("set_boundary_side_set_from_bary_and_boundary", [](polyfem::State &s, const std::function<int(const polyfem::RowVectorNd&, bool)> &boundary_marker) {
-		init_globals();
+		init_globals(s);
 		s.mesh->compute_boundary_ids(boundary_marker);
 	},
 	"Sets the side set for the boundary conditions, the functions takes the barycenter of the boundary (edge or face) and a flag that says if the element is boundary",
 	py::arg("boundary_marker"))
 	.def("set_boundary_side_set_from_v_ids", [](polyfem::State &s, const std::function<int(const std::vector<int>&, bool)> &boundary_marker) {
-		init_globals();
+		init_globals(s);
 		s.mesh->compute_boundary_ids(boundary_marker);
 	},
 	"Sets the side set for the boundary conditions, the functions takes the sorted list of vertex id and a flag that says if the element is boundary",
@@ -139,13 +141,13 @@ PYBIND11_MODULE(polyfempy, m) {
 
 
 	.def("set_rhs_from_path", [](polyfem::State &s, std::string &path) {
-		init_globals();
+		init_globals(s);
 		s.args["rhs_path"] = path;
 	},
 	"Loads the rhs from a file",
 	py::arg("path"))
 	.def("set_rhs", [](polyfem::State &s, const Eigen::MatrixXd &rhs) {
-		init_globals();
+		init_globals(s);
 		s.rhs_in = rhs;
 	},
 	"Sets the rhs",
@@ -154,7 +156,7 @@ PYBIND11_MODULE(polyfempy, m) {
 
 
 	.def("solve",[](polyfem::State &s) {
-		init_globals();
+		init_globals(s);
 
 		s.compute_mesh_stats();
 

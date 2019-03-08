@@ -3,7 +3,7 @@ import unittest
 import polyfempy as pf
 import numpy as np
 
-from .utils import plot
+# from .utils import plot
 
 import os
 
@@ -71,7 +71,7 @@ class InflationTest(unittest.TestCase):
 		for i in range(len(vv)):
 			vv[i] = np.array([vertices[i][0], vertices[i][1], sol[resi[i]][0]])
 
-		plot(vv, faces, None)
+		# plot(vv, faces, None)
 
 		# #save obj
 		# with open(output, "w") as file:

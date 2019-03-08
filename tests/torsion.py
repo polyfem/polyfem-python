@@ -1,7 +1,7 @@
 import unittest
 
 import polyfempy as pf
-from .utils import plot
+# from .utils import plot
 
 import os
 
@@ -47,7 +47,7 @@ class TorsionTest(unittest.TestCase):
         vertices = pts + disp
         mises, _ = solver.get_sampled_mises_avg()
 
-        plot(vertices, tets, mises)
+        # plot(vertices, tets, mises)
 
 
 if __name__ == '__main__':

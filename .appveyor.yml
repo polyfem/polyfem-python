@@ -8,20 +8,20 @@ branches:
     - master
 environment:
   matrix:
-  # - config: Release
-  #   PYTHON: "C:\\Python36-x64"
-  #   PYTHON_VERSION: "3.6.x" # currently 3.6.8
-  #   PYTHON_ARCH: "64"
+  - config: Release
+    PYTHON: "C:\\Python36-x64"
+    PYTHON_VERSION: "3.6.x" # currently 3.6.8
+    PYTHON_ARCH: "64"
 
   # - config: Release
   #   PYTHON: "C:\\Python35-x64"
   #   PYTHON_VERSION: "3.5.x" # currently 3.5.8
   #   PYTHON_ARCH: "64"
 
-  - config: Release
-    PYTHON: "C:\\Python27-x64"
-    PYTHON_VERSION: "2.7.x" # currently 2.7.15
-    PYTHON_ARCH: "64"
+  # - config: Release
+  #   PYTHON: "C:\\Python27-x64"
+  #   PYTHON_VERSION: "2.7.x" # currently 2.7.15
+  #   PYTHON_ARCH: "64"
 install:
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
   - "python --version"
@@ -38,7 +38,7 @@ build_script:
   - cd c:\projects\polyfempy
   - set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
   - set MSBuildOptions=/v:m /p:Configuration=%config% /logger:%MSBuildLogger%
-  - python setup.py develop
+  - python setup.py install
 
 test_script:
   - "python -m pip install plotly"

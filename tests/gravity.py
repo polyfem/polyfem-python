@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 import polyfempy as pf
-from .utils import plot
+# from .utils import plot
 
 
 class Gravity(unittest.TestCase):
@@ -65,7 +65,7 @@ class Gravity(unittest.TestCase):
         mises = solver.get_sampled_mises_avg_frames()
 
         # finally plot
-        plot(vertices, tets[frame], mises[frame])
+        # plot(vertices, tets[frame], mises[frame])
 
 
 if __name__ == '__main__':

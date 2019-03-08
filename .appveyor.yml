@@ -8,15 +8,15 @@ branches:
     - master
 environment:
   matrix:
-  - config: Release
-    PYTHON: "C:\\Python36-x64"
-    PYTHON_VERSION: "3.6.x" # currently 3.6.8
-    PYTHON_ARCH: "64"
+  # - config: Release
+  #   PYTHON: "C:\\Python36-x64"
+  #   PYTHON_VERSION: "3.6.x" # currently 3.6.8
+  #   PYTHON_ARCH: "64"
 
-  - config: Release
-    PYTHON: "C:\\Python35-x64"
-    PYTHON_VERSION: "3.5.x" # currently 3.5.8
-    PYTHON_ARCH: "64"
+  # - config: Release
+  #   PYTHON: "C:\\Python35-x64"
+  #   PYTHON_VERSION: "3.5.x" # currently 3.5.8
+  #   PYTHON_ARCH: "64"
 
   - config: Release
     PYTHON: "C:\\Python27-x64"

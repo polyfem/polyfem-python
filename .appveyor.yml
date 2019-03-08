@@ -31,13 +31,13 @@ install:
 
   # - "dir C:\\Python36-x64\\lib\\site-packages\\numpy\\core\\include"
   # - "dir C:\\Python36-x64\\lib\\site-packages\\numpy\\core\\include\\numpy"
-build:
-  parallel: true
+# build:
+  # parallel: true
 build_script:
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
   - cd c:\projects\polyfempy
-  - set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-  - set MSBuildOptions=/v:m /p:Configuration=%config% /logger:%MSBuildLogger%
+  # - set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+  # - set MSBuildOptions=/v:m /p:Configuration=%config% /logger:%MSBuildLogger%
   - python setup.py install
 
 test_script:

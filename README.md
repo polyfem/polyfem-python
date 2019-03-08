@@ -1,6 +1,10 @@
 # polyfem-python
+[![Build status](https://ci.appveyor.com/api/projects/status/lqfxi2pbkhpatxls?svg=true)](https://ci.appveyor.com/project/teseoch/polyfem-python)
+
+
 !!! danger
 	The python bindings are in alpha. Expect a lot of API changes and possible bugs. Use at your own peril!
+
 
 [![Last update](https://anaconda.org/conda-forge/polyfempy/badges/latest_release_date.svg)](https://anaconda.org/conda-forge/polyfempy)
 [![Downloads](https://anaconda.org/conda-forge/polyfempy/badges/downloads.svg)](https://anaconda.org/conda-forge/polyfempy)

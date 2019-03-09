@@ -30,10 +30,11 @@ install:
 build:
   parallel: true
 build_script:
+  - "MSBuild /help"
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
   - cd c:\projects\polyfempy
   - "python --version"
-  - python -m pip install . --no-deps -vv
+  - python setup.py install
 
 test_script:
   - cd c:\projects\polyfempy

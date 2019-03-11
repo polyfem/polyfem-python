@@ -31,16 +31,21 @@ install:
 
   # - "dir C:\\Python36-x64\\lib\\site-packages\\numpy\\core\\include"
   # - "dir C:\\Python36-x64\\lib\\site-packages\\numpy\\core\\include\\numpy"
-# build:
-  # parallel: true
+build:
+  parallel: true
 build_script:
+  # - "MSBuild /help"
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
   - cd c:\projects\polyfempy
+  - "python --version"
   # - set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
   # - set MSBuildOptions=/v:m /p:Configuration=%config% /logger:%MSBuildLogger%
   - python setup.py install
 
 test_script:
-  - "python -m pip install plotly"
   - cd c:\projects\polyfempy
-  - python setup.py test
+  - python tests/bending.py
+  - python tests/gravity.py
+  - python tests/inflation.py
+  - python tests/plane_hole.py
+  - python tests/torsion.py

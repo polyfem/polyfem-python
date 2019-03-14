@@ -53,6 +53,10 @@ class CMakeBuild(build_ext):
                       '-DPOLYFEM_WITH_APPS=OFF',
                       '-DPOLYFEM_WITH_MISC=OFF']
 
+        if platform.system() == 'Darwin':
+            cmake_args.append('-DINPUT_THIRD_PARTY_DIR=3rdparty.nosync')
+
+
         cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]
 

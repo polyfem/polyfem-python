@@ -4,12 +4,13 @@ import polyfempy as pf
 # from .utils import plot
 
 import os
-
+import platform
 
 class TorsionTest(unittest.TestCase):
     def test_run(self):
+        root_folder = os.path.join("..", "3rdparty.nosync" if platform.system() == 'Darwin' else "3rdparty", "data")
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        mesh_path = os.path.join(dir_path, "../3rdparty/data/square_beam_h.HYBRID")
+        mesh_path = os.path.join(dir_path, root_folder, "square_beam_h.HYBRID")
 
         settings = pf.Settings()
         settings.discr_order = 1

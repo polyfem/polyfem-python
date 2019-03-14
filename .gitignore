@@ -2,7 +2,7 @@ build/
 build.nosync/
 bin/
 bin_rel/
-3rdparty/
+3rdparty*
 *.sublime-workspace
 copy_lib
 *.sublime-project

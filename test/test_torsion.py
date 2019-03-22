@@ -6,6 +6,7 @@ import polyfempy as pf
 import os
 import platform
 
+
 class TorsionTest(unittest.TestCase):
     def test_run(self):
         root_folder = os.path.join("..", "3rdparty.nosync" if platform.system() == 'Darwin' else "3rdparty", "data")
@@ -39,7 +40,7 @@ class TorsionTest(unittest.TestCase):
         solver = pf.Solver()
 
 
-        solver.settings(str(settings))
+        solver.settings(settings)
         solver.load_mesh_from_path(mesh_path)
 
         solver.solve()

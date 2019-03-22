@@ -42,7 +42,7 @@ class Gravity(unittest.TestCase):
         settings.set_problem(problem)
 
         solver = pf.Solver()
-        solver.settings(str(settings))
+        solver.settings(settings)
 
         # This time we are using pts and faces instead of loading from the disk
         solver.set_mesh(pts, faces)

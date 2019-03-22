@@ -33,7 +33,7 @@ class InflationTest(unittest.TestCase):
 
 
 
-		solver.settings(str(settings))
+		solver.settings(settings)
 		solver.load_mesh_from_path(mesh_path)
 
 		solver.solve()
@@ -48,7 +48,7 @@ class InflationTest(unittest.TestCase):
 		settings.set_problem(problem)
 
 		#reload the parameters and mesh
-		solver.settings(settings.serialize())
+		solver.settings(settings)
 		solver.load_mesh_from_path(mesh_path)
 
 		#set the rhs as prev sol

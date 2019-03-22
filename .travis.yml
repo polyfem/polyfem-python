@@ -22,12 +22,12 @@ install:
   - pip install numpy
   - pip install plotly
 script:
-  - python setup.py install
-  - python tests/bending.py
-  - python tests/gravity.py
-  - python tests/inflation.py
-  - python tests/plane_hole.py
-  - python tests/torsion.py
+  - python setup.py build --debug install
+  - python test/test_bending.py
+  - python test/test_gravity.py
+  - python test/test_inflation.py
+  - python test/test_plane_hole.py
+  - python test/test_torsion.py
 # deploy:
 #   provider: pypi
 #   user: "teseoch"

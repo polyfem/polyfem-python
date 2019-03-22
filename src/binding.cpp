@@ -69,9 +69,10 @@ PYBIND11_MODULE(polyfempy, m) {
 
 	.def(py::init<>())
 
-	.def("settings", [](polyfem::State &self, const std::string &json) {
+	.def("settings", [](polyfem::State &self, const py::object &json) {
 		init_globals(self);
-		self.init(json::parse(json));
+		const std::string json_string = py::str(json);
+		self.init(json::parse(json_string));
 	},
 	"load PDE and problem parameters from the settings",
 	py::arg("json"))

@@ -13,39 +13,33 @@ environment:
     PYTHON_VERSION: "3.6.x" # currently 3.6.8
     PYTHON_ARCH: "64"
 
-  # - config: Release
-  #   PYTHON: "C:\\Python35-x64"
-  #   PYTHON_VERSION: "3.5.x" # currently 3.5.8
-  #   PYTHON_ARCH: "64"
+  - config: Release
+    PYTHON: "C:\\Python35-x64"
+    PYTHON_VERSION: "3.5.x" # currently 3.5.8
+    PYTHON_ARCH: "64"
 
-  # - config: Release
-  #   PYTHON: "C:\\Python27-x64"
-  #   PYTHON_VERSION: "2.7.x" # currently 2.7.15
-  #   PYTHON_ARCH: "64"
+  - config: Release
+    PYTHON: "C:\\Python27-x64"
+    PYTHON_VERSION: "2.7.x" # currently 2.7.15
+    PYTHON_ARCH: "64"
 install:
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
   - "python --version"
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
   - "python -m pip install numpy"
   - "python -c \"import numpy as np;import sys;print(np.get_include())\""
-
-  # - "dir C:\\Python36-x64\\lib\\site-packages\\numpy\\core\\include"
-  # - "dir C:\\Python36-x64\\lib\\site-packages\\numpy\\core\\include\\numpy"
 build:
   parallel: true
 build_script:
-  # - "MSBuild /help"
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
   - cd c:\projects\polyfempy
   - "python --version"
-  # - set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-  # - set MSBuildOptions=/v:m /p:Configuration=%config% /logger:%MSBuildLogger%
-  - python setup.py install
+  - python setup.py build --debug install
 
 test_script:
   - cd c:\projects\polyfempy
-  - python tests/bending.py
-  - python tests/gravity.py
-  - python tests/inflation.py
-  - python tests/plane_hole.py
-  - python tests/torsion.py
+  - python test/test_bending.py
+  - python test/test_gravity.py
+  - python test/test_inflation.py
+  - python test/test_plane_hole.py
+  - python test/test_torsion.py

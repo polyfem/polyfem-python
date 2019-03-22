@@ -101,5 +101,5 @@ setup(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License"
     ],
-    test_suite="tests"
+    test_suite="test"
 )

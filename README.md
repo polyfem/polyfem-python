@@ -4,9 +4,10 @@
 
 
 
-[![Last update](https://anaconda.org/conda-forge/polyfempy/badges/latest_release_date.svg)](https://anaconda.org/conda-forge/polyfempy)
-[![Downloads](https://anaconda.org/conda-forge/polyfempy/badges/downloads.svg)](https://anaconda.org/conda-forge/polyfempy)
-[![Install](https://anaconda.org/conda-forge/polyfempy/badges/installer/conda.svg)](https://anaconda.org/conda-forge/polyfempy)
+[![Anaconda-Server Badge](https://anaconda.org/conda-forge/polyfempy/badges/latest_release_date.svg)](https://anaconda.org/conda-forge/polyfempy)
+[![Anaconda-Server Badge](https://anaconda.org/conda-forge/polyfempy/badges/downloads.svg)](https://anaconda.org/conda-forge/polyfempy)
+[![Anaconda-Server Badge](https://anaconda.org/conda-forge/polyfempy/badges/platforms.svg)](https://anaconda.org/conda-forge/polyfempy)
+[![Anaconda-Server Badge](https://anaconda.org/conda-forge/polyfempy/badges/installer/conda.svg)](https://conda.anaconda.org/conda-forge)
 
 
 

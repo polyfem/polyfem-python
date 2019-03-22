@@ -59,6 +59,7 @@ class CMakeBuild(build_ext):
 
         cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]
+        cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
 
         if platform.system() == "Windows":
             cmake_args += ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}'.format(cfg.upper(), extdir)]
@@ -66,7 +67,6 @@ class CMakeBuild(build_ext):
                 cmake_args += ['-A', 'x64']
             build_args += ['--', '/m:4']
         else:
-            cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
             build_args += ['--', '-j2']
 
         env = os.environ.copy()
@@ -87,7 +87,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="polyfempy",
-    version="0.2.3",
+    version="0.3",
     author="Teseo Schneider",
     author_email="",
     description="Polyfem Python Bindings",

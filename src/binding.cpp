@@ -162,7 +162,6 @@ PYBIND11_MODULE(polyfempy, m) {
 		s.compute_mesh_stats();
 
 		s.build_basis();
-		s.build_polygonal_basis();
 
 		s.assemble_rhs();
 		s.assemble_stiffness_mat();
@@ -338,7 +337,19 @@ PYBIND11_MODULE(polyfempy, m) {
 
 		return mises;
 	},
-	"returns the von mises stresses per frame averaged around a vertex on a densly sampled mesh, use 'vismesh_rel_area' to control density");
+	"returns the von mises stresses per frame averaged around a vertex on a densly sampled mesh, use 'vismesh_rel_area' to control density")
+
+
+	.def("get_boundary_sidesets", 	[](polyfem::State &s) {
+		Eigen::MatrixXd points;
+		Eigen::MatrixXi faces;
+		Eigen::MatrixXd sidesets;
+
+		s.get_sidesets(points, faces, sidesets);
+
+		return py::make_tuple(points, faces, sidesets);
+	},
+	"exports get the boundary sideset, edges in 2d or trangles in 3d");
 
 
 

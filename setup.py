@@ -87,7 +87,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="polyfempy",
-    version="0.3",
+    version="0.4",
     author="Teseo Schneider",
     author_email="",
     description="Polyfem Python Bindings",

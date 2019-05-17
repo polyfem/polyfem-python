@@ -124,13 +124,14 @@ class GenericTensor:
 #################################################
 ############Stokes###############################
 class Flow:
-	"""Inflow/outflow problem for fluids. You can specify the sideset for the moving fluxes and the list of obstacle sidesets. https://polyfem.github.io/documentation/#flow"""
+	"""Inflow/outflow problem for fluids. You can specify the sideset for the moving fluxes, the axial direction of the flow, and the list of obstacle sidesets. https://polyfem.github.io/documentation/#flow"""
 
 	def __init__(self):
 		self.inflow = 1
 		self.outflow = 3
 		self.inflow_amout = 0.25
 		self.outflow_amout = 0.25
+		self.direction = 0
 		self.obstacle = [7]
 
 	def name(self):

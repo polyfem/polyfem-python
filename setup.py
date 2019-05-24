@@ -42,19 +42,10 @@ class CMakeBuild(build_ext):
 
         cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
                       '-DPYTHON_EXECUTABLE=' + sys.executable,
-                      '-DENABLE_PARDISO=OFF',
-                      '-DLIBIGL_WITH_OPENGL=OFF',
-                      '-DLIBIGL_WITH_OPENGL_GLFW=OFF',
-                      '-DLIBIGL_WITH_OPENGL_GLFW_IMGUI=OFF',
-                      '-DLIBIGL_WITH_PNG=OFF',
-                      '-DLIBIGL_WITH_PNG=OFF',
-                      '-DLIBIGL_WITH_VIEWER=OFF',
-                      '-DGEOGRAM_WITH_GRAPHICS=OFF',
+                      '-DPOLYFEM_WITH_PARDISO=OFF',
+                      '-DPOLYFEM_NO_UI=ON',
                       '-DPOLYFEM_WITH_APPS=OFF',
                       '-DPOLYFEM_WITH_MISC=OFF']
-
-        if platform.system() == 'Darwin':
-            cmake_args.append('-DINPUT_THIRD_PARTY_DIR=3rdparty.nosync')
 
 
         cfg = 'Debug' if self.debug else 'Release'

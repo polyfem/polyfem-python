@@ -15,6 +15,7 @@
 #include <pybind11/eigen.h>
 #include <pybind11/functional.h>
 #include <pybind11/stl.h>
+#include <pybind11/iostream.h>
 
 namespace py = pybind11;
 
@@ -48,7 +49,7 @@ namespace {
 			GEO::CmdLine::import_arg_group("pre");
 			GEO::CmdLine::import_arg_group("algo");
 
-			state.init_logger("", 2, false);
+			state.init_logger(std::cout, 2);
 
 			initialized = true;
 		}
@@ -57,6 +58,8 @@ namespace {
 }
 
 PYBIND11_MODULE(polyfempy, m) {
+    add_ostream_redirect(m);
+
 	const auto &sa = py::class_<ScalarAssemblers>(m, "ScalarFormulations");
 	for(auto &a : polyfem::AssemblerUtils::instance().scalar_assemblers())
 		sa.attr(a.c_str()) = a;
@@ -71,6 +74,7 @@ PYBIND11_MODULE(polyfempy, m) {
 
 	.def("settings", [](polyfem::State &self, const py::object &json) {
 		init_globals(self);
+        py::scoped_ostream_redirect output;
 		const std::string json_string = py::str(json);
 		self.init(json::parse(json_string));
 	},
@@ -79,6 +83,7 @@ PYBIND11_MODULE(polyfempy, m) {
 
 	.def("set_log_level", [](polyfem::State &s, int log_level) {
 		init_globals(s);
+		py::scoped_ostream_redirect output;
 		log_level = std::max(0, std::min(6, log_level));
 		spdlog::set_level(static_cast<spdlog::level::level_enum>(log_level));
 	},
@@ -87,12 +92,14 @@ PYBIND11_MODULE(polyfempy, m) {
 
 	.def("load_mesh_from_settings", [](polyfem::State &s) {
 		init_globals(s);
+		py::scoped_ostream_redirect output;
 		s.load_mesh();
 	},
 	"Loads a mesh from the 'mesh' field of the json and 'bc_tag' if any bc tags")
 
 	.def("load_mesh_from_path", [](polyfem::State &s, const std::string &path) {
 		init_globals(s);
+		py::scoped_ostream_redirect output;
 		s.args["mesh"] = path;
 		s.load_mesh();
 	},
@@ -100,6 +107,7 @@ PYBIND11_MODULE(polyfempy, m) {
 	py::arg("path"))
 	.def("load_mesh_from_path_and_tags", [](polyfem::State &s, const std::string &path, const std::string &bc_tag) {
 		init_globals(s);
+		py::scoped_ostream_redirect output;
 		s.args["mesh"] = path;
 		s.args["bc_tag"] = bc_tag;
 		s.load_mesh();
@@ -108,6 +116,7 @@ PYBIND11_MODULE(polyfempy, m) {
 	py::arg("path"), py::arg("bc_tag_path"))
 	.def("set_mesh", [](polyfem::State &s, const Eigen::MatrixXd &V, const Eigen::MatrixXi &F) {
 		init_globals(s);
+		py::scoped_ostream_redirect output;
 
 		if(V.cols() == 2)
 			s.mesh = std::make_unique<polyfem::Mesh2D>();
@@ -123,18 +132,21 @@ PYBIND11_MODULE(polyfempy, m) {
 
 	.def("set_boundary_side_set_from_bary", [](polyfem::State &s, const std::function<int(const polyfem::RowVectorNd&)> &boundary_marker) {
 		init_globals(s);
+		py::scoped_ostream_redirect output;
 		s.mesh->compute_boundary_ids(boundary_marker);
 	},
 	"Sets the side set for the boundary conditions, the functions takes the barycenter of the boundary (edge or face)",
 	py::arg("boundary_marker"))
 	.def("set_boundary_side_set_from_bary_and_boundary", [](polyfem::State &s, const std::function<int(const polyfem::RowVectorNd&, bool)> &boundary_marker) {
 		init_globals(s);
+		py::scoped_ostream_redirect output;
 		s.mesh->compute_boundary_ids(boundary_marker);
 	},
 	"Sets the side set for the boundary conditions, the functions takes the barycenter of the boundary (edge or face) and a flag that says if the element is boundary",
 	py::arg("boundary_marker"))
 	.def("set_boundary_side_set_from_v_ids", [](polyfem::State &s, const std::function<int(const std::vector<int>&, bool)> &boundary_marker) {
 		init_globals(s);
+		py::scoped_ostream_redirect output;
 		s.mesh->compute_boundary_ids(boundary_marker);
 	},
 	"Sets the side set for the boundary conditions, the functions takes the sorted list of vertex id and a flag that says if the element is boundary",
@@ -143,12 +155,14 @@ PYBIND11_MODULE(polyfempy, m) {
 
 	.def("set_rhs_from_path", [](polyfem::State &s, std::string &path) {
 		init_globals(s);
+		py::scoped_ostream_redirect output;
 		s.args["rhs_path"] = path;
 	},
 	"Loads the rhs from a file",
 	py::arg("path"))
 	.def("set_rhs", [](polyfem::State &s, const Eigen::MatrixXd &rhs) {
 		init_globals(s);
+		py::scoped_ostream_redirect output;
 		s.rhs_in = rhs;
 	},
 	"Sets the rhs",
@@ -156,10 +170,18 @@ PYBIND11_MODULE(polyfempy, m) {
 
 
 
-	.def("solve",[](polyfem::State &s) {
+	.def("compute_mesh_stats",[](polyfem::State &s) {
 		init_globals(s);
+		py::scoped_ostream_redirect output;
 
 		s.compute_mesh_stats();
+	},
+	"compute statistics")
+
+
+	.def("solve",[](polyfem::State &s) {
+		init_globals(s);
+		py::scoped_ostream_redirect output;
 
 		s.build_basis();
 
@@ -173,25 +195,31 @@ PYBIND11_MODULE(polyfempy, m) {
 	},
 	"solve the pde")
 
-	.def("compute_errors",
-		&polyfem::State::compute_errors,
-		"compute the error")
+	.def("compute_errors",[](polyfem::State &s) {
+		init_globals(s);
+		py::scoped_ostream_redirect output;
+
+		s.compute_errors();
+	},
+	"compute the error")
 
 	.def("get_log",	[](polyfem::State &s) {
+		py::scoped_ostream_redirect output;
 		std::stringstream ss;
 		s.save_json(ss);
 		return ss.str();
 	},
 	"gets the log as json")
 
-	.def("export_data", 	&polyfem::State::export_data,			"exports all data specified in the settings")
-	.def("export_vtu",	 	&polyfem::State::save_vtu,				"exports the solution as vtu", py::arg("path"))
-	.def("export_wire", 	&polyfem::State::save_wire,				"exports wireframe of the mesh", py::arg("path"), py::arg("isolines") = false)
+	.def("export_data", 	[](polyfem::State &s) { py::scoped_ostream_redirect output; s.export_data(); },			"exports all data specified in the settings")
+	.def("export_vtu",	 	[](polyfem::State &s, std::string &path) { py::scoped_ostream_redirect output; s.save_vtu(path); },				"exports the solution as vtu", py::arg("path"))
+	.def("export_wire", 	[](polyfem::State &s, std::string &path, bool isolines) { py::scoped_ostream_redirect output; s.save_wire(path, isolines); },				"exports wireframe of the mesh", py::arg("path"), py::arg("isolines") = false)
 
 
 	.def("get_solution", 			[](const polyfem::State &s) { return s.sol;}, 		"returns the solution")
 	.def("get_pressure", 			[](const polyfem::State &s) { return s.pressure;}, 	"returns the pressure")
 	.def("get_sampled_solution", 	[](polyfem::State &s,  bool boundary_only) {
+		py::scoped_ostream_redirect output;
 		Eigen::MatrixXd points;
 		Eigen::MatrixXi tets;
 		Eigen::MatrixXd discr;
@@ -213,6 +241,7 @@ PYBIND11_MODULE(polyfempy, m) {
 	py::arg("boundary_only") = bool(false))
 
 	.def("get_stresses", 	[](polyfem::State &s,  bool boundary_only) {
+		py::scoped_ostream_redirect output;
 		Eigen::MatrixXd points;
 		Eigen::MatrixXi tets;
 		Eigen::MatrixXd discr;
@@ -232,6 +261,7 @@ PYBIND11_MODULE(polyfempy, m) {
 	py::arg("boundary_only") = bool(false))
 
 	.def("get_sampled_mises", 	[](polyfem::State &s,  bool boundary_only) {
+		py::scoped_ostream_redirect output;
 		Eigen::MatrixXd points;
 		Eigen::MatrixXi tets;
 		Eigen::MatrixXd discr;
@@ -251,6 +281,7 @@ PYBIND11_MODULE(polyfempy, m) {
 	py::arg("boundary_only") = bool(false))
 
 	.def("get_sampled_mises_avg", 	[](polyfem::State &s,  bool boundary_only) {
+		py::scoped_ostream_redirect output;
 		Eigen::MatrixXd points;
 		Eigen::MatrixXi tets;
 		Eigen::MatrixXd discr;
@@ -274,6 +305,7 @@ PYBIND11_MODULE(polyfempy, m) {
 
 	////////////////////////////////////////////////////////////////////////////////////////////
 	.def("get_sampled_points_frames", 	[](polyfem::State &s) {
+		py::scoped_ostream_redirect output;
 		assert(!s.solution_frames.empty());
 
 		std::vector<Eigen::MatrixXd> pts;
@@ -288,6 +320,7 @@ PYBIND11_MODULE(polyfempy, m) {
 	"returns the points frames for a time dependent problem on a densly sampled mesh, use 'vismesh_rel_area' to control density")
 
 	.def("get_sampled_connectivity_frames", 	[](polyfem::State &s) {
+		py::scoped_ostream_redirect output;
 		assert(!s.solution_frames.empty());
 
 		std::vector<Eigen::MatrixXi> tets;
@@ -302,6 +335,7 @@ PYBIND11_MODULE(polyfempy, m) {
 
 
 	.def("get_sampled_solution_frames", 	[](polyfem::State &s) {
+		py::scoped_ostream_redirect output;
 		assert(!s.solution_frames.empty());
 
 		std::vector<Eigen::MatrixXd> fun;
@@ -316,6 +350,7 @@ PYBIND11_MODULE(polyfempy, m) {
 	"returns the solution frames for a time dependent problem on a densly sampled mesh, use 'vismesh_rel_area' to control density")
 
 	.def("get_sampled_mises_frames", 	[](polyfem::State &s) {
+		py::scoped_ostream_redirect output;
 		assert(!s.solution_frames.empty());
 
 		std::vector<Eigen::MatrixXd> mises;
@@ -328,6 +363,7 @@ PYBIND11_MODULE(polyfempy, m) {
 	"returns the von mises stresses frames on a densly sampled mesh, use 'vismesh_rel_area' to control density")
 
 	.def("get_sampled_mises_avg_frames", 	[](polyfem::State &s) {
+		py::scoped_ostream_redirect output;
 		assert(!s.solution_frames.empty());
 
 		std::vector<Eigen::MatrixXd> mises;
@@ -341,6 +377,7 @@ PYBIND11_MODULE(polyfempy, m) {
 
 
 	.def("get_boundary_sidesets", 	[](polyfem::State &s) {
+		py::scoped_ostream_redirect output;
 		Eigen::MatrixXd points;
 		Eigen::MatrixXi faces;
 		Eigen::MatrixXd sidesets;

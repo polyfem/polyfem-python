@@ -97,14 +97,23 @@ PYBIND11_MODULE(polyfempy, m) {
 	},
 	"Loads a mesh from the 'mesh' field of the json and 'bc_tag' if any bc tags")
 
-	.def("load_mesh_from_path", [](polyfem::State &s, const std::string &path) {
+	.def("load_mesh_from_path", [](polyfem::State &s, const std::string &path, const bool normalize_mesh, const double vismesh_rel_area, const int n_refs, const double boundary_id_threshold) {
 		init_globals(s);
 		py::scoped_ostream_redirect output;
 		s.args["mesh"] = path;
+		s.args["normalize_mesh"] = normalize_mesh;
+		s.args["n_refs"] = n_refs;
+		s.args["boundary_id_threshold"] = boundary_id_threshold;
+		s.args["vismesh_rel_area"] = vismesh_rel_area;
 		s.load_mesh();
 	},
 	"Loads a mesh from the path and 'bc_tag' from the json if any bc tags",
-	py::arg("path"))
+	py::arg("path"),
+	py::arg("normalize_mesh") = bool(false),
+	py::arg("vismesh_rel_area") = double(0.00001),
+	py::arg("n_refs") = int(0),
+	py::arg("boundary_id_threshold") = double(-1))
+
 	.def("load_mesh_from_path_and_tags", [](polyfem::State &s, const std::string &path, const std::string &bc_tag) {
 		init_globals(s);
 		py::scoped_ostream_redirect output;

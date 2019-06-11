@@ -8,13 +8,17 @@ import platform
 
 class BendingTest(unittest.TestCase):
     def test_run(self):
+        self.run_one(1)
+        self.run_one(2)
+    
+    def run_one(self, discr_order):
         root_folder = os.path.join("..", "3rdparty.nosync" if platform.system() == 'Darwin' else "3rdparty", "data")
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
         mesh_path = os.path.join(dir_path, root_folder, "plane_hole.obj")
 
         settings = pf.Settings()
-        settings.discr_order = 1
+        settings.discr_order = discr_order
         settings.normalize_mesh = True
         # settings.vismesh_rel_area = 0.1
 

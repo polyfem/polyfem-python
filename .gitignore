@@ -2,10 +2,13 @@ build/
 build.nosync/
 bin/
 bin_rel/
+.vscode
+dist/
 3rdparty*
 *.sublime-workspace
 copy_lib
 *.sublime-project
+*.code-workspace
 __pycache__
 *.obj
 *.pyc

@@ -29,31 +29,33 @@ class CMakeBuild(build_ext):
 
         # self.debug = True
 
-        cmake_version = LooseVersion(re.search(r'version\s*([\d.]+)', out.decode()).group(1))
+        cmake_version = LooseVersion(
+            re.search(r'version\s*([\d.]+)', out.decode()).group(1))
         if cmake_version < '3.1.0':
             raise RuntimeError("CMake >= 3.1.0 is required")
 
         for ext in self.extensions:
             self.build_extension(ext)
 
-
     def build_extension(self, ext):
-        extdir = os.path.join(os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name))),"polyfempy")
+        extdir = os.path.join(os.path.abspath(os.path.dirname(
+            self.get_ext_fullpath(ext.name))), "polyfempy")
 
         cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
                       '-DPYTHON_EXECUTABLE=' + sys.executable,
                       '-DPOLYFEM_WITH_PARDISO=OFF',
                       '-DPOLYFEM_NO_UI=ON',
                       '-DPOLYFEM_WITH_APPS=OFF',
-                      '-DPOLYFEM_WITH_MISC=OFF']
-
+                      '-DPOLYFEM_WITH_MISC=OFF',
+                      '-DPOLYFEM_WITH_SPECTRA=OFF']
 
         cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]
         cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
 
         if platform.system() == "Windows":
-            cmake_args += ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}'.format(cfg.upper(), extdir)]
+            cmake_args += [
+                '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}'.format(cfg.upper(), extdir)]
             if sys.maxsize > 2**32:
                 cmake_args += ['-A', 'x64']
             build_args += ['--', '/m']
@@ -61,13 +63,16 @@ class CMakeBuild(build_ext):
             build_args += ['--', '-j2']
 
         env = os.environ.copy()
-        env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''),self.distribution.get_version())
+        env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(
+            env.get('CXXFLAGS', ''), self.distribution.get_version())
 
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
-        subprocess.check_call(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
+        subprocess.check_call(['cmake', ext.sourcedir] +
+                              cmake_args, cwd=self.build_temp, env=env)
 
-        subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
+        subprocess.check_call(['cmake', '--build', '.'] +
+                              build_args, cwd=self.build_temp)
 
         print()  # Add an empty line for cleaner output
 
@@ -78,7 +83,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="polyfempy",
-    version="0.4",
+    version="0.5",
     author="Teseo Schneider",
     author_email="",
     description="Polyfem Python Bindings",

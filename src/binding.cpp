@@ -180,17 +180,10 @@ PYBIND11_MODULE(polyfempy, m)
 		},
 			 "Sets the rhs", py::arg("matrix"))
 
-		.def("compute_mesh_stats", [](polyfem::State &s) {
-			init_globals(s);
-			py::scoped_ostream_redirect output;
-
-			s.compute_mesh_stats();
-		},
-			 "compute statistics")
-
 		.def("solve", [](polyfem::State &s) {
 			init_globals(s);
 			py::scoped_ostream_redirect output;
+			s.compute_mesh_stats();
 
 			s.build_basis();
 

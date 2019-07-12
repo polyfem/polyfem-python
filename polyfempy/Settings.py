@@ -2,7 +2,7 @@ import json
 import polyfempy
 
 class Settings:
-	"""Class that encodes the settings of the solver, it nodels the input json file"""
+	"""Class that encodes the settings of the solver, it models the input json file"""
 
 	def __init__(self):
 		self.discr_order = 1
@@ -36,16 +36,6 @@ class Settings:
 		self.problem_params = {}
 
 
-	def set_pde(self, pde):
-		if pde == "NonLinearElasticity":
-			pde = "NeoHookean"
-
-		self.__is_scalar = not polyfempy.polyfempy.is_tensor(pde)
-
-		if self.__is_scalar:
-			self.scalar_formulation = pde
-		else:
-			self.tensor_formulation = pde
 
 	def set_problem(self, problem):
 		"""Sets the problem, use any of the problems in Problems or the Problem"""
@@ -58,6 +48,19 @@ class Settings:
 			self.problem = problem.name()
 		self.problem_params = problem.params()
 
+
+	def set_pde(self, pde):
+		"""Sets the PDE to solve, use any of the polyfempy.PDEs"""
+
+		if pde == "NonLinearElasticity":
+			pde = "NeoHookean"
+
+		self.__is_scalar = not polyfempy.polyfempy.is_tensor(pde)
+
+		if self.__is_scalar:
+			self.scalar_formulation = pde
+		else:
+			self.tensor_formulation = pde
 
 	def set_material_params(self, name, value):
 		"""set the material parameters, for instance set_material_params("E", 200) sets the Young's modulus E to 200. See https://polyfem.github.io/documentation/#formulations for full list"""
@@ -107,6 +110,6 @@ class Settings:
 		return json.dumps(tmp, sort_keys=True, indent=4)
 
 	def serialize(self):
-		"""stringygied json description of this class, used to run the solver"""
+		"""stringyfied json description of this class, used to run the solver"""
 
 		return str(self)

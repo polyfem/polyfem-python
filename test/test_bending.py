@@ -26,9 +26,9 @@ class BendingTest(unittest.TestCase):
         settings.set_material_params("nu", 0.35)
 
 
-        settings.tensor_formulation = pf.TensorFormulations.LinearElasticity
+        settings.set_pde(pf.PDEs.LinearElasticity)
 
-        problem = pf.GenericTensor()
+        problem = pf.Problem()
         problem.add_dirichlet_value(2, [0, 0, 0])
         problem.add_neumann_value(1,[0, -100, 0])
 

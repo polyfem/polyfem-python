@@ -23,7 +23,7 @@ class TorsionTest(unittest.TestCase):
         settings.set_material_params("nu", 0.35)
 
         settings.nl_solver_rhs_steps = 5
-        settings.tensor_formulation = pf.TensorFormulations.NeoHookean
+        settings.set_pde(pf.PDEs.NonLinearElasticity)
 
         problem = pf.Torsion()
         problem.fixed_boundary = 5

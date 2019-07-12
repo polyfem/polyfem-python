@@ -1,5 +1,5 @@
 import json
-
+import polyfempy
 
 class Settings:
 	"""Class that encodes the settings of the solver, it nodels the input json file"""
@@ -7,6 +7,7 @@ class Settings:
 	def __init__(self):
 		self.discr_order = 1
 		self.pressure_discr_order = 1
+		self.__is_scalar = True
 
 		self.scalar_formulation = "Laplacian"
 		self.tensor_formulation = "LinearElasticity"
@@ -35,10 +36,26 @@ class Settings:
 		self.problem_params = {}
 
 
-	def set_problem(self, problem):
-		"""Sets the problem, use any of the problems in Problems"""
+	def set_pde(self, pde):
+		if pde == "NonLinearElasticity":
+			pde = "NeoHookean"
 
-		self.problem = problem.name()
+		self.__is_scalar = not polyfempy.polyfempy.is_tensor(pde)
+
+		if self.__is_scalar:
+			self.scalar_formulation = pde
+		else:
+			self.tensor_formulation = pde
+
+	def set_problem(self, problem):
+		"""Sets the problem, use any of the problems in Problems or the Problem"""
+
+		if isinstance(problem, polyfempy.Problem):
+			self.problem = "GenericScalar" if self.__is_scalar else "GenericTensor"
+			if problem.rhs is None:
+				problem.rhs = 0 if self.__is_scalar else [0, 0, 0]
+		else:
+			self.problem = problem.name()
 		self.problem_params = problem.params()
 
 

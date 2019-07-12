@@ -36,7 +36,7 @@ class Gravity(unittest.TestCase):
         settings.set_material_params("nu", 0.3)
 
         # We use a linear material model
-        settings.tensor_formulation = pf.TensorFormulations.LinearElasticity
+        settings.set_pde(pf.PDEs.LinearElasticity)
 
         problem = pf.Gravity()
         settings.set_problem(problem)

@@ -27,12 +27,11 @@ class BendingTest(unittest.TestCase):
         settings.set_material_params("E", 210000)
         settings.set_material_params("nu", 0.3)
 
+        settings.set_pde(pf.PDEs.LinearElasticity)
 
-        settings.tensor_formulation = pf.TensorFormulations.LinearElasticity
-
-        problem = pf.GenericTensor()
-        problem.add_dirichlet_value(1, [0, 0], [True, False])
-        problem.add_dirichlet_value(4, [0, 0], [False, True])
+        problem = pf.Problem()
+        problem.set_x_symmetric(1)
+        problem.set_y_symmetric(4)
 
         problem.add_neumann_value(3, [100, 0])
 
@@ -49,6 +48,8 @@ class BendingTest(unittest.TestCase):
         [pts, tets, disp] = solver.get_sampled_solution()
         vertices = pts + disp
         mises, _ = solver.get_sampled_mises_avg()
+
+        solver.compute_errors()
 
         # plot(vertices, tets, mises)
 

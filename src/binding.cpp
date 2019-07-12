@@ -26,7 +26,10 @@ class TensorAssemblers
 {
 };
 
-namespace
+class PDEs
+{ };
+
+	namespace
 {
 void init_globals(polyfem::State &state)
 {
@@ -62,15 +65,30 @@ void init_globals(polyfem::State &state)
 
 PYBIND11_MODULE(polyfempy, m)
 {
-	add_ostream_redirect(m);
+	const auto &pdes = py::class_<PDEs>(m, "PDEs");
 
 	const auto &sa = py::class_<ScalarAssemblers>(m, "ScalarFormulations");
-	for (auto &a : polyfem::AssemblerUtils::instance().scalar_assemblers())
+	for (auto &a : polyfem::AssemblerUtils::instance().scalar_assemblers()){
 		sa.attr(a.c_str()) = a;
+		pdes.attr(a.c_str()) = a;
+	}
 
 	const auto &ta = py::class_<TensorAssemblers>(m, "TensorFormulations");
-	for (auto &a : polyfem::AssemblerUtils::instance().tensor_assemblers())
+	for (auto &a : polyfem::AssemblerUtils::instance().tensor_assemblers()){
 		ta.attr(a.c_str()) = a;
+		pdes.attr(a.c_str()) = a;
+	}
+
+	ta.attr("NonLinearElasticity") = "NonLinearElasticity";
+	pdes.attr("NonLinearElasticity") = "NonLinearElasticity";
+
+	pdes.doc() = "List of supported partial differential equations";
+
+	m.def("is_tensor", [](const std::string &pde) {
+		const auto &assembler = polyfem::AssemblerUtils::instance();
+		return assembler.is_tensor(pde);
+	},
+			"returns true if the pde is tensorial", py::arg("pde"));
 
 	auto &solver = py::class_<polyfem::State>(m, "Solver")
 		.def(py::init<>())

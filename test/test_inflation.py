@@ -24,9 +24,9 @@ class InflationTest(unittest.TestCase):
 		settings.discr_order = 2
 		settings.normalize_mesh = True
 		settings.vismesh_rel_area = 0.00001
-		settings.scalar_formulation = pf.ScalarFormulations.Laplacian
+		settings.set_pde(pf.PDEs.Laplacian)
 
-		problem = pf.GenericScalar()
+		problem = pf.Problem()
 		problem.add_dirichlet_value("all", 10)
 		problem.rhs = 0
 		settings.set_problem(problem)

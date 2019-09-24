@@ -3,6 +3,7 @@ class Problem:
 
     def __init__(self):
         self.rhs = None
+        self.exact = None
         self.dirichlet_boundary = []
         self.neumann_boundary = []
 

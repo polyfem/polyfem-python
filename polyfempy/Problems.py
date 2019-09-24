@@ -17,6 +17,7 @@ class GenericScalar:
 
 	def __init__(self):
 		self.rhs = 0
+		self.exact = None
 		self.dirichlet_boundary = []
 		self.neumann_boundary = []
 
@@ -78,6 +79,7 @@ class GenericTensor:
 
 	def __init__(self):
 		self.rhs = [0, 0, 0]
+		self.exact = None
 		self.dirichlet_boundary = []
 		self.neumann_boundary = []
 

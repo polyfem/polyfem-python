@@ -49,21 +49,24 @@ class GenericScalar:
 class Gravity:
 	"""time dependent gravity problem https://polyfem.github.io/documentation/#gravity"""
 
+	def __init__(self, force=0.1):
+		self.force = force
+
 	def name(self):
 		return "Gravity"
 
 	def params(self):
-		return {}
+		return self.__dict__
 
 
 class Torsion:
 	"""3D torsion problem, specify which sideset to fix (fixed_boundary) and which one turns turning_boundary https://polyfem.github.io/documentation/#torsionelastic"""
 
-	def __init__(self):
-		self.axis_coordiante = 2
-		self.n_turns = 0.5
-		self.fixed_boundary = 5
-		self.turning_boundary = 6
+	def __init__(self, axis_coordiante=2, n_turns=0.5, fixed_boundary=5, turning_boundary=6):
+		self.axis_coordiante = axis_coordiante
+		self.n_turns = n_turns
+		self.fixed_boundary = fixed_boundary
+		self.turning_boundary = turning_boundary
 
 
 	def name(self):
@@ -128,13 +131,13 @@ class GenericTensor:
 class Flow:
 	"""Inflow/outflow problem for fluids. You can specify the sideset for the moving fluxes, the axial direction of the flow, and the list of obstacle sidesets. https://polyfem.github.io/documentation/#flow"""
 
-	def __init__(self):
-		self.inflow = 1
-		self.outflow = 3
-		self.inflow_amout = 0.25
-		self.outflow_amout = 0.25
-		self.direction = 0
-		self.obstacle = [7]
+	def __init__(self, inflow=1, outflow=3, inflow_amout=0.25, outflow_amout=0.25, direction=0, obstacle=[7]):
+		self.inflow = inflow
+		self.outflow = outflow
+		self.inflow_amout = inflow_amout
+		self.outflow_amout = outflow_amout
+		self.direction = direction
+		self.obstacle = obstacle
 
 	def name(self):
 		return "Flow"

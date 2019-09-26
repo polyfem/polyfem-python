@@ -1,15 +1,22 @@
 class Problem:
     """Generic problem problem, scalar or tensor depending on the pde. Warning, this problem needs to be used with the `set_pde` function in settings"""
 
-    def __init__(self):
-        self.rhs = None
-        self.exact = None
+    def __init__(self, rhs=None, exact=None):
+        self.rhs = rhs
+        self.exact = exact
         self.dirichlet_boundary = []
         self.neumann_boundary = []
 
+    def set_dirichlet_value(self, id, value, is_dirichlet_dim=None):
+        """set the Dirichlet value value for the sideset id. Note the value must be a scalar, vector in 2D, or 3D depending on the problem. is_dirichlet_dim is a vector of boolean specifying which dimentions are fixed, only for vector-based problems."""
+        self.add_dirichlet_value(id, value, is_dirichlet_dim)
+
+    def set_neumann_value(self, id, value):
+        """set the Neumann value value for the sideset id. Note the value must be a scalar, vector in 2D, or 3D depending on the problem"""
+        self.add_neumann_value(id, value)
 
     def add_dirichlet_value(self, id, value, is_dirichlet_dim=None):
-        """add the Dirichlet value value for the sideset id. Note the value must be a scalar, vector in 2D, or 3D depending on the problem. is_dirichlet_dim is a vector of boolean specifying which dimentions are fixed, only for vector-based problems."""
+        """set the Dirichlet value value for the sideset id. Note the value must be a scalar, vector in 2D, or 3D depending on the problem. is_dirichlet_dim is a vector of boolean specifying which dimentions are fixed, only for vector-based problems."""
 
         tmp = {}
         tmp["id"] = id
@@ -23,7 +30,7 @@ class Problem:
 
 
     def add_neumann_value(self, id, value):
-        """add the Neumann value value for the sideset id. Note the value must be a scalar, vector in 2D, or 3D depending on the problem"""
+        """set the Neumann value value for the sideset id. Note the value must be a scalar, vector in 2D, or 3D depending on the problem"""
 
         tmp = {}
         tmp["id"] = id

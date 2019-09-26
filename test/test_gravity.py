@@ -13,7 +13,6 @@ class Gravity(unittest.TestCase):
         x, y = np.meshgrid(extend, extend, sparse=False, indexing='xy')
         pts = np.column_stack((x.ravel(), y.ravel()))
 
-
         # Create connectivity
         faces = np.ndarray([(n_pts-1)**2, 4],dtype=np.int32)
 
@@ -29,17 +28,14 @@ class Gravity(unittest.TestCase):
                 index = index + 1
 
         # create settings
-        settings = pf.Settings()
-        settings.discr_order = 1
+        # We use a linear material model and linear elments
+        settings = pf.Settings(discr_order=1, pde=pf.PDEs.LinearElasticity)
 
         settings.set_material_params("E", 2100)
         settings.set_material_params("nu", 0.3)
 
-        # We use a linear material model
-        settings.set_pde(pf.PDEs.LinearElasticity)
-
-        problem = pf.Gravity()
-        settings.set_problem(problem)
+        problem = pf.Gravity(force=0.1)
+        settings.problem = problem
 
         solver = pf.Solver()
         solver.settings(settings)

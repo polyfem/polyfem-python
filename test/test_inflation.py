@@ -18,23 +18,16 @@ class InflationTest(unittest.TestCase):
 		#some setup
 		dir_path = os.path.dirname(os.path.realpath(__file__))
 		mesh_path = os.path.join(dir_path, root_folder, "circle2.msh")
-		print(mesh_path)
 
-		settings = pf.Settings()
-		settings.discr_order = 2
-		settings.normalize_mesh = True
-		settings.vismesh_rel_area = 0.00001
-		settings.set_pde(pf.PDEs.Laplacian)
+		settings = pf.Settings(discr_order=2, pde=pf.PDEs.Laplacian)
 
-		problem = pf.Problem()
+		problem = pf.Problem(rhs=0)
 		problem.add_dirichlet_value("all", 10)
-		problem.rhs = 0
 		settings.set_problem(problem)
 
 
-
 		solver.settings(settings)
-		solver.load_mesh_from_path(mesh_path)
+		solver.load_mesh_from_path(mesh_path, normalize_mesh=True, vismesh_rel_area=0.00001)
 
 		solver.solve()
 		sol = solver.get_solution()
@@ -42,14 +35,13 @@ class InflationTest(unittest.TestCase):
 
 		# now we got the solution of the first laplacian, we use it as rhs for the second one
 		# setup zero bc and use sol as rhs
-		problem = pf.GenericScalar()
+		problem = pf.Problem(rhs=0)
 		problem.add_dirichlet_value("all", 0)
-		problem.rhs = 0
-		settings.set_problem(problem)
+		settings.problem = problem
 
 		#reload the parameters and mesh
 		solver.settings(settings)
-		solver.load_mesh_from_path(mesh_path)
+		solver.load_mesh_from_path(mesh_path, normalize_mesh=True, vismesh_rel_area=0.00001)
 
 		#set the rhs as prev sol
 		solver.set_rhs(sol)
@@ -57,7 +49,7 @@ class InflationTest(unittest.TestCase):
 		solver.solve()
 
 		#get the solution on a densly sampled mesh
-		[vertices, tris, sol] = solver.get_sampled_solution()
+		vertices, tris, sol = solver.get_sampled_solution()
 
 
 

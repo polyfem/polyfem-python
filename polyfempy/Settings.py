@@ -4,28 +4,20 @@ import polyfempy
 class Settings:
 	"""Class that encodes the settings of the solver, it models the input json file"""
 
-	def __init__(self):
-		self.discr_order = 1
-		self.pressure_discr_order = 1
+	def __init__(self, discr_order=1, pressure_discr_order=1, pde=polyfempy.PDEs.Laplacian, nl_solver_rhs_steps=1, tend=1, time_steps=10):
+		self.discr_order = discr_order
+		self.pressure_discr_order = pressure_discr_order
 		self.__is_scalar = True
 
 		self.scalar_formulation = "Laplacian"
 		self.tensor_formulation = "LinearElasticity"
 
-		self.normalize_mesh = True
-
-		self.n_refs = 0
-		self.vismesh_rel_area = 0.00001
 		self.nl_solver_rhs_steps = 1
 
-
-
-		self.problem = "Franke"
-
+		self._problem = "Franke"
 
 		self.tend = 1
 		self.time_steps = 10
-
 
 		self.quadrature_order = 4
 
@@ -35,18 +27,34 @@ class Settings:
 
 		self.problem_params = {}
 
+		self.pde = pde
+
+	def get_problem(self):
+		"""Get the problem"""
+		return self._problem
 
 
 	def set_problem(self, problem):
 		"""Sets the problem, use any of the problems in Problems or the Problem"""
+		if isinstance(problem, str):
+			self._problem = problem
+			return
 
 		if isinstance(problem, polyfempy.Problem):
-			self.problem = "GenericScalar" if self.__is_scalar else "GenericTensor"
+			self._problem = "GenericScalar" if self.__is_scalar else "GenericTensor"
 			if problem.rhs is None:
 				problem.rhs = 0 if self.__is_scalar else [0, 0, 0]
 		else:
-			self.problem = problem.name()
+			self._problem = problem.name()
 		self.problem_params = problem.params()
+
+
+	def get_pde(self, pde):
+		"""Get the PDE"""
+		if self.__is_scalar:
+			return self.scalar_formulation
+		else:
+			self.tensor_formulation
 
 
 	def set_pde(self, pde):
@@ -61,6 +69,7 @@ class Settings:
 			self.scalar_formulation = pde
 		else:
 			self.tensor_formulation = pde
+
 
 	def set_material_params(self, name, value):
 		"""set the material parameters, for instance set_material_params("E", 200) sets the Young's modulus E to 200. See https://polyfem.github.io/documentation/#formulations for full list"""
@@ -105,6 +114,9 @@ class Settings:
 			(key, value)
 			for (key, value) in self.__dict__.items())
 		tmp.pop('advanced_options', None)
+		tmp.pop('_problem', None)
+		tmp.pop('_Settings__is_scalar', None)
+		tmp["problem"] = self.problem
 		tmp.update(self.advanced_options)
 
 		return json.dumps(tmp, sort_keys=True, indent=4)
@@ -113,3 +125,6 @@ class Settings:
 		"""stringyfied json description of this class, used to run the solver"""
 
 		return str(self)
+
+	problem = property(get_problem, set_problem)
+	pde = property(get_pde, set_pde)

@@ -12,12 +12,12 @@ class Settings:
 		self.scalar_formulation = "Laplacian"
 		self.tensor_formulation = "LinearElasticity"
 
-		self.nl_solver_rhs_steps = 1
+		self.nl_solver_rhs_steps = nl_solver_rhs_steps
 
 		self._problem = "Franke"
 
-		self.tend = 1
-		self.time_steps = 10
+		self.tend = tend
+		self.time_steps = time_steps
 
 		self.quadrature_order = 4
 

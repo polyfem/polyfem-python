@@ -6,6 +6,10 @@
 #include <geogram/basic/command_line.h>
 #include <geogram/basic/command_line_args.h>
 
+#include <igl/remove_duplicate_vertices.h>
+#include <igl/boundary_facets.h>
+#include <igl/remove_unreferenced.h>
+
 #ifdef USE_TBB
 #include <tbb/task_scheduler_init.h>
 #include <thread>
@@ -17,7 +21,7 @@
 #include <pybind11/stl.h>
 #include <pybind11/iostream.h>
 
-namespace py = pybind11;
+	namespace py = pybind11;
 
 class ScalarAssemblers
 {
@@ -254,7 +258,14 @@ PYBIND11_MODULE(polyfempy, m)
 							"gets the log as json")
 
 					   .def("export_data", [](polyfem::State &s) { py::scoped_ostream_redirect output; s.export_data(); }, "exports all data specified in the settings")
-					   .def("export_vtu", [](polyfem::State &s, std::string &path) { py::scoped_ostream_redirect output; s.save_vtu(path); }, "exports the solution as vtu", py::arg("path"))
+					   .def("export_vtu", [](polyfem::State &s, std::string &path, bool boundary_only) {
+						   py::scoped_ostream_redirect output;
+						   const bool tmp = s.args["export"]["vis_boundary_only"];
+						   s.args["export"]["vis_boundary_only"] = boundary_only;
+						   s.save_vtu(path);
+						   s.args["export"]["vis_boundary_only"] = tmp;
+						},
+						"exports the solution as vtu", py::arg("path"), py::arg("boundary_only") = bool(false))
 					   .def("export_wire", [](polyfem::State &s, std::string &path, bool isolines) { py::scoped_ostream_redirect output; s.save_wire(path, isolines); }, "exports wireframe of the mesh", py::arg("path"), py::arg("isolines") = false)
 
 					   .def("get_solution", [](const polyfem::State &s) { return s.sol; }, "returns the solution")
@@ -335,6 +346,56 @@ PYBIND11_MODULE(polyfempy, m)
 						   return py::make_tuple(fun, tfun);
 					   },
 							"returns the von mises stresses and stress tensor averaged around a vertex on a densly sampled mesh, use 'vismesh_rel_area' to control density", py::arg("boundary_only") = bool(false))
+
+					   .def("get_sampled_traction_forces", [](polyfem::State &s, const bool apply_displacement, const bool compute_avg) {
+						   py::scoped_ostream_redirect output;
+
+						   if (!s.mesh)
+							   throw pybind11::value_error("Load the mesh first!");
+						   if (!s.mesh->is_volume())
+							   throw pybind11::value_error("This function works only on volumetric meshes!");
+						   if (s.problem->is_scalar())
+							   throw pybind11::value_error("Define a tensor problem!");
+
+
+
+
+						   Eigen::MatrixXd result;
+
+						   Eigen::MatrixXd v_surf;
+						   Eigen::MatrixXi f_surf;
+						   const double epsilon = 1e-10;
+
+						   {
+							   const polyfem::Mesh3D &mesh3d = *dynamic_cast<polyfem::Mesh3D *>(s.mesh.get());
+							   Eigen::MatrixXd points(mesh3d.n_vertices(), 3);
+							   Eigen::MatrixXi tets(mesh3d.n_cells(), 4);
+
+							   for(int t = 0; t < mesh3d.n_cells(); ++t)
+							   {
+								   if (mesh3d.n_cell_vertices(t) != 4)
+									   throw pybind11::value_error("Works only with tet meshes!");
+
+									for(int i = 0; i < 4; ++i)
+								   		tets(t, i) = mesh3d.cell_vertex(t, i);
+							   }
+
+							   for(int p = 0; p < mesh3d.n_vertices(); ++p)
+								   points.row(p) << mesh3d.point(p);
+
+							   Eigen::MatrixXi f_surf_tmp, _;
+							   igl::boundary_facets(tets, f_surf_tmp);
+							   igl::remove_unreferenced(points, f_surf_tmp, v_surf, f_surf, _);
+						   }
+
+						   if(apply_displacement)
+							   s.interpolate_boundary_tensor_function(v_surf, f_surf, s.sol, s.sol, compute_avg, result);
+						   else
+							   s.interpolate_boundary_tensor_function(v_surf, f_surf, s.sol, compute_avg, result);
+
+						   return py::make_tuple(v_surf, f_surf, result);
+					   },
+							"returns the traction forces computed on the surface", py::arg("apply_displacement") = bool(false), py::arg("compute_avg") = bool(true))
 
 					   ////////////////////////////////////////////////////////////////////////////////////////////
 					   .def("get_sampled_points_frames", [](polyfem::State &s) {

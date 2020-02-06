@@ -77,11 +77,11 @@ class Settings:
 		self.params[name] = value
 
 
-	def set_vtu_export_path(self, path, bounda_only=False):
-		"""Sets the path to export a vtu file with the results, use bounda_only to export only one layer of the mesh in 3d"""
+	def set_vtu_export_path(self, path, boundary_only=False):
+		"""Sets the path to export a vtu file with the results, use boundary_only to export only one layer of the mesh in 3d"""
 
 		self.export["vis_mesh"] = path
-		self.export["vis_boundary_only"] = bounda_only
+		self.export["vis_boundary_only"] = boundary_only
 
 
 	def set_wireframe_export_path(self, path):

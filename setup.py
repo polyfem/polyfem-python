@@ -47,7 +47,7 @@ class CMakeBuild(build_ext):
                       '-DPOLYFEM_NO_UI=ON',
                       '-DPOLYFEM_WITH_APPS=OFF',
                       '-DPOLYFEM_WITH_MISC=OFF',
-                      '-DPOLYFEM_WITH_AMGCL=ON',
+                      '-DPOLYFEM_WITH_AMGCL=OFF',
                     #   '-DPOLYFEM_WITH_MKL=ON',
                       '-DPOLYFEM_WITH_SPECTRA=OFF']
 
@@ -86,7 +86,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="polyfempy",
-    version="0.5.2",
+    version="0.5.3",
     author="Teseo Schneider",
     author_email="",
     description="Polyfem Python Bindings",

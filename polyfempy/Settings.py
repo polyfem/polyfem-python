@@ -4,7 +4,7 @@ import polyfempy
 class Settings:
 	"""Class that encodes the settings of the solver, it models the input json file"""
 
-	def __init__(self, discr_order=1, pressure_discr_order=1, pde=polyfempy.PDEs.Laplacian, nl_solver_rhs_steps=1, tend=1, time_steps=10):
+	def __init__(self, discr_order=1, pressure_discr_order=1, pde=polyfempy.PDEs.Laplacian, nl_solver_rhs_steps=-1, tend=1, time_steps=10):
 		self.discr_order = discr_order
 		self.pressure_discr_order = pressure_discr_order
 		self.__is_scalar = True

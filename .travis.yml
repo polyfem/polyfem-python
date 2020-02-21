@@ -13,7 +13,7 @@ addons:
     # - libc++-dev
     - gcc-7
     - g++-7
-    - boost1.67
+    - libboost-dev
     # - libsuitesparse-dev
 env:
   - CC=gcc-7 && CXX=g++-7

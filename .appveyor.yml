@@ -19,7 +19,7 @@ environment:
     PYTHON_ARCH: "64"
 
 install:
-  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;C:\\Libraries\\boost_1_69_0;%PATH%"
   - "python --version"
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
   - "python -m pip install numpy"
@@ -27,7 +27,7 @@ install:
 build:
   parallel: true
 build_script:
-  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;C:\\Libraries\\boost_1_69_0;%PATH%"
   - cd c:\projects\polyfempy
   - "python --version"
   - python setup.py build --debug install

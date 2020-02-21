@@ -23,7 +23,6 @@ install:
   - pip install numpy
   - pip install plotly
 script:
-  - apt search mkl
   - python setup.py build --debug install
   - python test/test_bending.py
   - python test/test_gravity.py

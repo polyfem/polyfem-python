@@ -48,7 +48,7 @@ class CMakeBuild(build_ext):
                       '-DPOLYFEM_WITH_APPS=OFF',
                       '-DPOLYFEM_WITH_MISC=OFF',
                       '-DPOLYFEM_WITH_AMGCL=ON',
-                      '-DPOLYFEM_WITH_MKL=ON',
+                    #   '-DPOLYFEM_WITH_MKL=ON',
                       '-DPOLYFEM_WITH_SPECTRA=OFF']
 
         cfg = 'Debug' if self.debug else 'Release'

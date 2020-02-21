@@ -62,8 +62,11 @@ class Gravity:
 class Torsion:
 	"""3D torsion problem, specify which sideset to fix (fixed_boundary) and which one turns turning_boundary https://polyfem.github.io/documentation/#torsionelastic"""
 
-	def __init__(self, axis_coordiante=2, n_turns=0.5, fixed_boundary=5, turning_boundary=6):
-		self.axis_coordiante = axis_coordiante
+	def __init__(self, axis_coordiante=None, axis_coordinate=2, n_turns=0.5, fixed_boundary=5, turning_boundary=6):
+		if axis_coordiante:
+			self.axis_coordiante = axis_coordiante
+		else:
+			self.axis_coordiante = axis_coordinate
 		self.n_turns = n_turns
 		self.fixed_boundary = fixed_boundary
 		self.turning_boundary = turning_boundary

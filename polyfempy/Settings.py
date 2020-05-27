@@ -9,6 +9,8 @@ class Settings:
 		self.pressure_discr_order = pressure_discr_order
 		self.__is_scalar = True
 
+		self.BDF_order = 1
+
 		self.scalar_formulation = "Laplacian"
 		self.tensor_formulation = "LinearElasticity"
 

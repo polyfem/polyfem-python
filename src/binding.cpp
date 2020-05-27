@@ -33,7 +33,9 @@ class TensorAssemblers
 class PDEs
 { };
 
-	namespace
+//TODO add save_time_sequence
+
+namespace
 {
 void init_globals(polyfem::State &state)
 {
@@ -262,7 +264,7 @@ PYBIND11_MODULE(polyfempy, m)
 						   py::scoped_ostream_redirect output;
 						   const bool tmp = s.args["export"]["vis_boundary_only"];
 						   s.args["export"]["vis_boundary_only"] = boundary_only;
-						   s.save_vtu(path);
+						   s.save_vtu(path, 0);
 						   s.args["export"]["vis_boundary_only"] = tmp;
 						},
 						"exports the solution as vtu", py::arg("path"), py::arg("boundary_only") = bool(false))

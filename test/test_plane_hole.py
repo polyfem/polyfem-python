@@ -28,6 +28,7 @@ class BendingTest(unittest.TestCase):
         problem.set_y_symmetric(4)
 
         problem.add_neumann_value(3, [100, 0])
+        # problem.add_neumann_value(3, lambda x,y,z: [100, 0, 0])
 
         settings.problem = problem
 

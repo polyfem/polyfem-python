@@ -4,19 +4,22 @@ import polyfempy
 class Settings:
 	"""Class that encodes the settings of the solver, it models the input json file"""
 
-	def __init__(self, discr_order=1, pressure_discr_order=1, pde=polyfempy.PDEs.Laplacian, nl_solver_rhs_steps=-1, tend=1, time_steps=10):
+	def __init__(self, discr_order=1, pressure_discr_order=1, pde=polyfempy.PDEs.Laplacian, contact_problem=False, BDF_order=1, nl_solver_rhs_steps=-1, tend=1, time_steps=10):
 		self.discr_order = discr_order
 		self.pressure_discr_order = pressure_discr_order
-		self.__is_scalar = True
+		self._is_scalar = True
 
 		self.BDF_order = 1
 
 		self.scalar_formulation = "Laplacian"
 		self.tensor_formulation = "LinearElasticity"
+		self.has_collision = contact_problem
+		self.BDF_order = BDF_order
 
 		self.nl_solver_rhs_steps = nl_solver_rhs_steps
 
 		self._problem = "Franke"
+		self._python_problem = None
 
 		self.tend = tend
 		self.time_steps = time_steps
@@ -43,17 +46,18 @@ class Settings:
 			return
 
 		if isinstance(problem, polyfempy.Problem):
-			self._problem = "GenericScalar" if self.__is_scalar else "GenericTensor"
+			self._problem = "GenericScalar" if self._is_scalar else "GenericTensor"
 			if problem.rhs is None:
-				problem.rhs = 0 if self.__is_scalar else [0, 0, 0]
+				problem.rhs = 0 if self._is_scalar else [0, 0, 0]
 		else:
 			self._problem = problem.name()
 		self.problem_params = problem.params()
+		self._python_problem = problem
 
 
 	def get_pde(self, pde):
 		"""Get the PDE"""
-		if self.__is_scalar:
+		if self._is_scalar:
 			return self.scalar_formulation
 		else:
 			self.tensor_formulation
@@ -65,9 +69,9 @@ class Settings:
 		if pde == "NonLinearElasticity":
 			pde = "NeoHookean"
 
-		self.__is_scalar = not polyfempy.polyfempy.is_tensor(pde)
+		self._is_scalar = not polyfempy.polyfempy.is_tensor(pde)
 
-		if self.__is_scalar:
+		if self._is_scalar:
 			self.scalar_formulation = pde
 		else:
 			self.tensor_formulation = pde
@@ -117,7 +121,9 @@ class Settings:
 			for (key, value) in self.__dict__.items())
 		tmp.pop('advanced_options', None)
 		tmp.pop('_problem', None)
-		tmp.pop('_Settings__is_scalar', None)
+		tmp.pop('_Settings_is_scalar', None)
+		tmp.pop('_python_problem', None)
+
 		tmp["problem"] = self.problem
 		tmp.update(self.advanced_options)
 

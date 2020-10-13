@@ -42,7 +42,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          conda install -c numpy libblas libcblas suitesparse plotly -y
+          conda install numpy libblas libcblas suitesparse plotly -y
 
       - name: Build (Debug)
         if: matrix.config == 'Debug'

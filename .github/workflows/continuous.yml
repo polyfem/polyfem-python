@@ -45,11 +45,11 @@ jobs:
           conda install -c numpy libblas libcblas suitesparse plotly -y
 
       - name: Build (Debug)
-        if: runner.config == 'Debug'
+        if: matrix.config == 'Debug'
         run: python setup.py build --debug develop
 
       - name: Build (Release)
-        if: runner.config == 'Release'
+        if: matrix.config == 'Release'
         run: python setup.py build develop
 
       - name: Tests

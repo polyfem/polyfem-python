@@ -35,7 +35,8 @@ class TensorAssemblers
 };
 
 class PDEs
-{ };
+{
+};
 
 //TODO add save_time_sequence
 
@@ -48,28 +49,28 @@ namespace
 		if (!initialized)
 		{
 #ifndef WIN32
-		setenv("GEO_NO_SIGNAL_HANDLER", "1", 1);
+			setenv("GEO_NO_SIGNAL_HANDLER", "1", 1);
 #endif
 
-		GEO::initialize();
+			GEO::initialize();
 
 #ifdef USE_TBB
-		const size_t MB = 1024 * 1024;
-		const size_t stack_size = 64 * MB;
-		unsigned int num_threads = std::max(1u, std::thread::hardware_concurrency());
-		tbb::task_scheduler_init scheduler(num_threads, stack_size);
+			const size_t MB = 1024 * 1024;
+			const size_t stack_size = 64 * MB;
+			unsigned int num_threads = std::max(1u, std::thread::hardware_concurrency());
+			tbb::task_scheduler_init scheduler(num_threads, stack_size);
 #endif
 
-		// Import standard command line arguments, and custom ones
-		GEO::CmdLine::import_arg_group("standard");
-		GEO::CmdLine::import_arg_group("pre");
-		GEO::CmdLine::import_arg_group("algo");
+			// Import standard command line arguments, and custom ones
+			GEO::CmdLine::import_arg_group("standard");
+			GEO::CmdLine::import_arg_group("pre");
+			GEO::CmdLine::import_arg_group("algo");
 
-		state.init_logger(std::cout, 2);
+			state.init_logger(std::cout, 2);
 
-		initialized = true;
+			initialized = true;
+		}
 	}
-}
 
 } // namespace
 
@@ -78,13 +79,15 @@ PYBIND11_MODULE(polyfempy, m)
 	const auto &pdes = py::class_<PDEs>(m, "PDEs");
 
 	const auto &sa = py::class_<ScalarAssemblers>(m, "ScalarFormulations");
-	for (auto &a : polyfem::AssemblerUtils::instance().scalar_assemblers()){
+	for (auto &a : polyfem::AssemblerUtils::scalar_assemblers())
+	{
 		sa.attr(a.c_str()) = a;
 		pdes.attr(a.c_str()) = a;
 	}
 
 	const auto &ta = py::class_<TensorAssemblers>(m, "TensorFormulations");
-	for (auto &a : polyfem::AssemblerUtils::instance().tensor_assemblers()){
+	for (auto &a : polyfem::AssemblerUtils::tensor_assemblers())
+	{
 		ta.attr(a.c_str()) = a;
 		pdes.attr(a.c_str()) = a;
 	}
@@ -96,14 +99,12 @@ PYBIND11_MODULE(polyfempy, m)
 
 	m.def(
 		"is_tensor", [](const std::string &pde) {
-			const auto &assembler = polyfem::AssemblerUtils::instance();
-			return assembler.is_tensor(pde);
+			return polyfem::AssemblerUtils::is_tensor(pde);
 		},
 		"returns true if the pde is tensorial", py::arg("pde"));
 
 	const auto setting_lambda = [](polyfem::State &self, const py::object &settings) {
 		using namespace polyfem;
-
 
 		init_globals(self);
 		// py::scoped_ostream_redirect output;
@@ -134,7 +135,7 @@ PYBIND11_MODULE(polyfempy, m)
 					{
 						const std::pair<py::handle, py::handle> keyval = *it;
 						const std::string key = keyval.first.cast<std::string>();
-						if(key == "id")
+						if (key == "id")
 						{
 							id = keyval.second.cast<int>();
 							count++;
@@ -159,7 +160,7 @@ PYBIND11_MODULE(polyfempy, m)
 						}
 					}
 
-					if(count == 2)
+					if (count == 2)
 					{
 						GenericScalarProblem *sproblem = nullptr;
 						GenericTensorProblem *tproblem = nullptr;
@@ -178,7 +179,7 @@ PYBIND11_MODULE(polyfempy, m)
 				[](GenericScalarProblem *sp, GenericTensorProblem *tp, int id, const BCFuncS &sfunc, const BCFuncV &tfunc) {
 					assert(sp == nullptr || tp == nullptr);
 
-					if(sp != nullptr)
+					if (sp != nullptr)
 						sp->add_neumann_boundary(id, sfunc);
 					else
 						tp->add_neumann_boundary(id, tfunc);

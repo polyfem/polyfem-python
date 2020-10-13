@@ -1,0 +1,60 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+env:
+  CTEST_OUTPUT_ON_FAILURE: ON
+  CTEST_PARALLEL_LEVEL: 2
+
+jobs:
+  Build:
+    name: ${{ matrix.name }} (${{ matrix.config }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-18.04, macos-latest, windows-2019]
+        config: [Debug, Release]
+        include:
+          - os: macos-latest
+            name: macOS
+          - os: ubuntu-18.04
+            name: Linux
+          - os: windows-2019
+            name: Windows
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v1
+        with:
+          fetch-depth: 10
+
+      - name: Stetup Conda
+        uses: s-weigand/setup-conda@v1
+        with:
+          conda-channels: anaconda, conda-forge
+          python-version: 3.6
+
+      - name: Install Dependencies
+        run: |
+          conda install -c numpy libblas libcblas suitesparse plotly -y
+
+      - name: Build (Debug)
+        if: runner.config == 'Debug'
+        run: python setup.py build --debug develop
+
+      - name: Build (Release)
+        if: runner.config == 'Release'
+        run: python setup.py build develop
+
+      - name: Tests
+        run: |
+          python test/test_bending.py
+          python test/test_gravity.py
+          python test/test_inflation.py
+          python test/test_plane_hole.py

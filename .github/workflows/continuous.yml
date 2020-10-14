@@ -53,11 +53,11 @@ jobs:
 
       - name: Build (Debug)
         if: matrix.config == 'Debug'
-        run: python setup.py build --debug develop
+        run: python setup.py build --debug install
 
       - name: Build (Release)
         if: matrix.config == 'Release'
-        run: python setup.py build develop
+        run: python setup.py build install
 
       - name: Tests
         run: |

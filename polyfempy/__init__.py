@@ -14,3 +14,4 @@ from .Problems import Torsion
 from .Problems import GenericTensor
 from .Problems import Flow
 from .Problems import DrivenCavity
+from .Problems import FlowWithObstacle

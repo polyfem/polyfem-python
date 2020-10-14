@@ -1,7 +1,5 @@
 # polyfem-python
-[![Build Status](https://travis-ci.com/polyfem/polyfem-python.svg?branch=master)](https://travis-ci.com/polyfem/polyfem-python)
-[![Build status](https://ci.appveyor.com/api/projects/status/lqfxi2pbkhpatxls?svg=true)](https://ci.appveyor.com/project/teseoch/polyfem-python)
-
+![Build](https://github.com/polyfem/polyfem-python/workflows/Build/badge.svg)
 
 
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/polyfempy/badges/latest_release_date.svg)](https://anaconda.org/conda-forge/polyfempy)

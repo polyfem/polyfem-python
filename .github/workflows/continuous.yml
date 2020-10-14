@@ -34,6 +34,10 @@ jobs:
         with:
           fetch-depth: 10
 
+      - name: Setup NMake (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
       - name: Stetup Conda
         uses: s-weigand/setup-conda@v1
         with:
@@ -43,9 +47,9 @@ jobs:
       - name: Install Dependencies
         run: conda install numpy libblas libcblas suitesparse plotly -y
 
-      - name: Envs
+      - name: Envs (Windows)
         if: runner.os == 'Windows'
-        run: echo "::set-env name=CMAKE_GENERATOR::NMake Makefiles"
+        run: echo "CMAKE_GENERATOR=NMake Makefiles" >> $GITHUB_ENV
 
       - name: Build (Debug)
         if: matrix.config == 'Debug'

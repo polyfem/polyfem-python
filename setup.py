@@ -43,13 +43,13 @@ class CMakeBuild(build_ext):
 
         cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
                       '-DPYTHON_EXECUTABLE=' + sys.executable,
-                      '-DPOLYFEM_WITH_PARDISO=OFF',
+                      '-DPOLYSOLVE_WITH_PARDISO=OFF',
                       '-DPOLYFEM_NO_UI=ON',
                       '-DPOLYFEM_WITH_APPS=OFF',
                       '-DPOLYFEM_WITH_MISC=OFF',
-                      '-DPOLYFEM_WITH_AMGCL=OFF',
-                      #   '-DPOLYFEM_WITH_MKL=ON',
-                      '-DPOLYFEM_WITH_SPECTRA=OFF']
+                      '-DPOLYSOLVE_WITH_AMGCL=OFF',
+                      '-DPOLYSOLVE_WITH_MKL=OFF',
+                      '-DPOLYSOLVE_WITH_SPECTRA=OFF']
 
         cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]

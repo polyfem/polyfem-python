@@ -41,8 +41,11 @@ jobs:
           python-version: 3.6
 
       - name: Install Dependencies
-        run: |
-          conda install numpy libblas libcblas suitesparse plotly -y
+        run: conda install numpy libblas libcblas suitesparse plotly -y
+
+      - name: Envs
+        if: runner.os == 'Windows'
+        run: echo "::set-env name=CMAKE_GENERATOR::NMake Makefiles"
 
       - name: Build (Debug)
         if: matrix.config == 'Debug'

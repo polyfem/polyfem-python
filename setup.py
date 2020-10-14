@@ -43,13 +43,13 @@ class CMakeBuild(build_ext):
 
         cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
                       '-DPYTHON_EXECUTABLE=' + sys.executable,
-                      '-DPOLYFEM_WITH_PARDISO=OFF',
+                      '-DPOLYSOLVE_WITH_PARDISO=OFF',
                       '-DPOLYFEM_NO_UI=ON',
                       '-DPOLYFEM_WITH_APPS=OFF',
                       '-DPOLYFEM_WITH_MISC=OFF',
-                      '-DPOLYFEM_WITH_AMGCL=OFF',
-                      #   '-DPOLYFEM_WITH_MKL=ON',
-                      '-DPOLYFEM_WITH_SPECTRA=OFF']
+                      '-DPOLYSOLVE_WITH_AMGCL=OFF',
+                      '-DPOLYSOLVE_WITH_MKL=OFF',
+                      '-DPOLYSOLVE_WITH_SPECTRA=OFF']
 
         cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]
@@ -61,7 +61,7 @@ class CMakeBuild(build_ext):
             if os.environ.get('CMAKE_GENERATOR') != "NMake Makefiles":
                 if sys.maxsize > 2**32:
                     cmake_args += ['-A', 'x64']
-                build_args += ['--', '/m']
+                # build_args += ['--', '/m']
         else:
             build_args += ['--', '-j2']
 

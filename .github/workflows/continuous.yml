@@ -25,7 +25,6 @@ jobs:
             name: Windows
           - os: macOS-latest
             name: MacOS
-    if: ${{ matrix.name }} != 'Windows' or ${{ matrix.config }} == 'Debug'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -60,13 +59,15 @@ jobs:
         run: |
           python setup.py build --debug install
 
+      # windows has problem with memory and 2 passes...
       - name: Build (Release)
-        if: matrix.config == 'Release'
+        if: matrix.config == 'Release' && runner.os != 'Windows'
         run: |
           python setup.py build install
 
+      # macos segfaults???
       - name: Tests
-        if: matrix.name != 'MacOS' # macos segfaults???
+        if: matrix.name == 'Linux' || (matrix.config == 'Debug' && runner.os == 'Windows')
         run: |
           python test/test_bending.py
           python test/test_gravity.py

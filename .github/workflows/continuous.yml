@@ -25,7 +25,7 @@ jobs:
             name: Windows
           - os: macOS-latest
             name: MacOS
-    if: matrix.name != 'Windows' or matrix.config == 'Debug'
+    if: ${{ matrix.name }} != 'Windows' or ${{ matrix.config }} == 'Debug'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2

@@ -49,6 +49,7 @@ jobs:
       - name: Install Dependencies
         run: |
           conda --version
+          which python
           conda install numpy libblas libcblas suitesparse plotly -y
 
       - name: Envs (Windows)
@@ -67,6 +68,7 @@ jobs:
 
       - name: Tests
         run: |
+          which python
           python test/test_bending.py
           python test/test_gravity.py
           python test/test_inflation.py

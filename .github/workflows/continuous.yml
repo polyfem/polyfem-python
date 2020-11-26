@@ -31,7 +31,7 @@ jobs:
             name: MacOS
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
         with:
           fetch-depth: 10
 
@@ -39,12 +39,19 @@ jobs:
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
 
+      # - name: Stetup Conda
+      #   uses: s-weigand/setup-conda@v1
+      #   with:
+      #     update-conda: true
+      #     python-version: ${{ matrix.python-version }}
+      #     conda-channels: anaconda, conda-forge
+
       - name: Stetup Conda
-        uses: s-weigand/setup-conda@v1
+        uses: conda-incubator/setup-miniconda@v2
         with:
-          update-conda: true
+          auto-update-conda: true
           python-version: ${{ matrix.python-version }}
-          conda-channels: anaconda, conda-forge
+          channels: anaconda, conda-forge
 
       - name: Install Dependencies
         run: |
@@ -56,7 +63,7 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           echo "CMAKE_GENERATOR=NMake Makefiles" >> $GITHUB_ENV
-          conda init powershell
+          # conda init powershell
 
       - name: Build (Debug)
         if: matrix.config == 'Debug'

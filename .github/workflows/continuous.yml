@@ -52,6 +52,7 @@ jobs:
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
           channels: anaconda, conda-forge
+          activate-environment: base
 
       - name: Install Dependencies
         run: |
@@ -68,6 +69,7 @@ jobs:
       - name: Build (Debug)
         if: matrix.config == 'Debug'
         run: |
+          which python
           python setup.py build --debug install
 
       - name: Build (Release)

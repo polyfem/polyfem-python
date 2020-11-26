@@ -14,18 +14,21 @@ env:
 
 jobs:
   Build:
-    name: ${{ matrix.name }} (${{ matrix.config }})
+    name: ${{ matrix.name }} Python ${{ matrix.python-version }} (${{ matrix.config }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-18.04, windows-2019]
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+        python-version: [3.6, 3.7, 3.8]
         config: [Debug, Release]
         include:
           - os: ubuntu-18.04
             name: Linux
           - os: windows-2019
             name: Windows
+          - os: macOS-latest
+            name: MacOS
     steps:
       - name: Checkout repository
         uses: actions/checkout@v1
@@ -39,11 +42,14 @@ jobs:
       - name: Stetup Conda
         uses: s-weigand/setup-conda@v1
         with:
+          update-conda: true
+          python-version: ${{ matrix.python-version }}
           conda-channels: anaconda, conda-forge
-          python-version: 3.6
 
       - name: Install Dependencies
-        run: conda install numpy libblas libcblas suitesparse plotly -y
+        run: |
+          conda activate
+          conda install numpy libblas libcblas suitesparse plotly -y
 
       - name: Envs (Windows)
         if: runner.os == 'Windows'
@@ -51,14 +57,19 @@ jobs:
 
       - name: Build (Debug)
         if: matrix.config == 'Debug'
-        run: python setup.py build --debug install
+        run: |
+          conda activate
+          python setup.py build --debug install
 
       - name: Build (Release)
         if: matrix.config == 'Release'
-        run: python setup.py build install
+        run: |
+          conda activate
+          python setup.py build install
 
       - name: Tests
         run: |
+          conda activate
           python test/test_bending.py
           python test/test_gravity.py
           python test/test_inflation.py

@@ -52,7 +52,7 @@ jobs:
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
           channels: anaconda, conda-forge
-          activate-environment: base
+          auto-activate-base: true
 
       - name: Install Dependencies
         run: |

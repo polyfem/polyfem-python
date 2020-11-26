@@ -25,6 +25,7 @@ jobs:
             name: Windows
           - os: macOS-latest
             name: MacOS
+    if: runner.os != 'Windows' or matrix.config == 'Debug'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2

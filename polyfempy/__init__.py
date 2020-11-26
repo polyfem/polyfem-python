@@ -4,6 +4,7 @@ from .polyfempy import ScalarFormulations
 from .polyfempy import TensorFormulations
 
 from .Settings import Settings
+from .Selection import Selection
 
 from .Problem import Problem
 

@@ -23,9 +23,9 @@ jobs:
         python-version: [3.6, 3.7, 3.8]
         config: [Debug, Release]
         include:
-          - os: ubuntu-18.04
+          - os: ubuntu-latest
             name: Linux
-          - os: windows-2019
+          - os: windows-latest
             name: Windows
           - os: macOS-latest
             name: MacOS
@@ -48,7 +48,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          conda activate
+          conda --version
           conda install numpy libblas libcblas suitesparse plotly -y
 
       - name: Envs (Windows)
@@ -58,18 +58,15 @@ jobs:
       - name: Build (Debug)
         if: matrix.config == 'Debug'
         run: |
-          conda activate
           python setup.py build --debug install
 
       - name: Build (Release)
         if: matrix.config == 'Release'
         run: |
-          conda activate
           python setup.py build install
 
       - name: Tests
         run: |
-          conda activate
           python test/test_bending.py
           python test/test_gravity.py
           python test/test_inflation.py

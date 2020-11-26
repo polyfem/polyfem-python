@@ -110,107 +110,6 @@ PYBIND11_MODULE(polyfempy, m)
 		// py::scoped_ostream_redirect output;
 		const std::string json_string = py::str(settings);
 		self.init(json::parse(json_string));
-
-		const std::string pname = py::str(settings.attr("get_problem")());
-
-		if (pname == "GenericTensor")
-		{
-			const bool is_scalar = settings.attr("_is_scalar").cast<bool>();
-			py::object generic_problem = settings.attr("_python_problem");
-
-			const auto set_bc = [&](const std::string &attr_name, const bool is_pressure,
-									const std::function<void(GenericScalarProblem *, GenericTensorProblem *, int, const BCFuncS &, const BCFuncV &)> &func) {
-				py::list lambda_list = generic_problem.attr(attr_name.c_str());
-
-				for (int i = 0; i < lambda_list.size(); ++i)
-				{
-					const py::dict dic = lambda_list[i];
-
-					int id = 0;
-					BCFuncS funcs;
-					BCFuncV funcv;
-					int count = 0;
-
-					for (auto it = dic.begin(); it != dic.end(); ++it)
-					{
-						const std::pair<py::handle, py::handle> keyval = *it;
-						const std::string key = keyval.first.cast<std::string>();
-						if (key == "id")
-						{
-							id = keyval.second.cast<int>();
-							count++;
-						}
-						else if (key == "value")
-						{
-							const py::handle &pyfunc = keyval.second;
-							if (is_scalar || is_pressure)
-							{
-								funcs = pyfunc.cast<BCFuncS>();
-								// self.cleanups.emplace_back(pyfunc);
-								count++;
-							}
-							else
-							{
-								funcv = pyfunc.cast<BCFuncV>();
-								count++;
-								// std::cout<<"caaaast"<<std::endl;
-								// self.cleanups.emplace_back(pyfunc);
-								// self.cleanups_f.emplace_back(funcv);
-							}
-						}
-					}
-
-					if (count == 2)
-					{
-						GenericScalarProblem *sproblem = nullptr;
-						GenericTensorProblem *tproblem = nullptr;
-						if (is_scalar)
-							sproblem = dynamic_cast<GenericScalarProblem *>(self.problem.get());
-						else
-							tproblem = dynamic_cast<GenericTensorProblem *>(self.problem.get());
-
-						func(sproblem, tproblem, id, funcs, funcv);
-					}
-				}
-			};
-
-			set_bc(
-				"neumann_boundary_lambda", false,
-				[](GenericScalarProblem *sp, GenericTensorProblem *tp, int id, const BCFuncS &sfunc, const BCFuncV &tfunc) {
-					assert(sp == nullptr || tp == nullptr);
-
-					if (sp != nullptr)
-						sp->add_neumann_boundary(id, sfunc);
-					else
-						tp->add_neumann_boundary(id, tfunc);
-				});
-
-			set_bc(
-				"pressure_boundary_lambda", false,
-				[](GenericScalarProblem *sp, GenericTensorProblem *tp, int id, const BCFuncS &sfunc, const BCFuncV &tfunc) {
-					assert(sp == nullptr);
-					assert(tp != nullptr);
-					assert(sfunc != nullptr);
-
-					tp->add_pressure_boundary(id, sfunc);
-				});
-
-			set_bc(
-				"dirichlet_boundary_lambda", false,
-				[](GenericScalarProblem *sp, GenericTensorProblem *tp, int id, const BCFuncS &sfunc, const BCFuncV &tfunc) {
-					assert(sp == nullptr || tp == nullptr);
-					py::gil_scoped_acquire acq;
-
-					if (sp != nullptr)
-						sp->add_dirichlet_boundary(id, sfunc);
-					else
-						tp->add_dirichlet_boundary(id, tfunc, true, true, true); //TODO replace with real value
-
-					// Eigen::MatrixXd xxx = tfunc(0, 0, 0);
-					// std::cout<<xxx<<std::endl;
-					py::gil_scoped_release release;
-				});
-		}
 	};
 
 	auto &solver = py::class_<polyfem::State>(m, "Solver")
@@ -619,7 +518,20 @@ PYBIND11_MODULE(polyfempy, m)
 
 							   return py::make_tuple(points, faces, sidesets);
 						   },
-						   "exports get the boundary sideset, edges in 2d or trangles in 3d");
+						   "exports get the boundary sideset, edges in 2d or trangles in 3d")
+					   .def(
+						   "get_body_ids", [](polyfem::State &s) {
+							   //    py::scoped_ostream_redirect output;
+							   Eigen::MatrixXd points;
+							   Eigen::MatrixXi tets;
+							   Eigen::MatrixXi el_id;
+							   Eigen::MatrixXd discr;
+
+							   s.build_vis_mesh(points, tets, el_id, discr);
+
+							   return py::make_tuple(points, tets, el_id);
+						   },
+						   "exports get the body ids");
 
 	solver.doc() = "Polyfem solver";
 }

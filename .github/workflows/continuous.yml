@@ -20,7 +20,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.6] # , 3.7, 3.8]
         config: [Debug, Release]
         include:
           - os: ubuntu-latest
@@ -54,7 +54,9 @@ jobs:
 
       - name: Envs (Windows)
         if: runner.os == 'Windows'
-        run: echo "CMAKE_GENERATOR=NMake Makefiles" >> $GITHUB_ENV
+        run: |
+          echo "CMAKE_GENERATOR=NMake Makefiles" >> $GITHUB_ENV
+          conda init powershell
 
       - name: Build (Debug)
         if: matrix.config == 'Debug'

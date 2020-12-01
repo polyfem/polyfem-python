@@ -13,6 +13,10 @@ class Problem:
         self.neumann_boundary = []
         self.pressure_boundary = []
 
+        self.initial_solution = None
+        self.initial_velocity = None
+        self.initial_acceleration = None
+
         # self.dirichlet_boundary_lambda = []
         # self.neumann_boundary_lambda = []
         # self.pressure_boundary_lambda = []
@@ -81,6 +85,18 @@ class Problem:
         else:
             self.pressure_boundary.append(tmp)
 
+    def set_initial_solution(self, value):
+        """set the initial solution for time dependent problems"""
+        self.initial_solution = value
+
+    def set_initial_velocity(self, value):
+        """set the initial velocity for time dependent problems"""
+        self.initial_velocity = value
+
+    def set_initial_acceleration(self, value):
+        """set the initial acceleration for time dependent problems"""
+        self.initial_acceleration = value
+
     def set_velocity(self, id, value, is_dim_fixed=None, linear_ramp_to=None):
         """set the velocity value for the sideset id. Note the value must be a vector in 2D or 3D depending on the problem"""
         self.add_dirichlet_value(id, value, is_dim_fixed, linear_ramp_to)
@@ -114,10 +130,20 @@ class Problem:
         self.add_dirichlet_value(id, [0, 0, 0], [False, True, True])
 
     def params(self):
-        """removing the lambda list from the result"""
+        """return a dictionary representation of the problem"""
         tmp = dict(
             (key, value)
             for (key, value) in self.__dict__.items())
+
+        if self.initial_solution is None:
+            tmp.pop('initial_solution', None)
+
+        if self.initial_velocity is None:
+            tmp.pop('initial_velocity', None)
+
+        if self.initial_acceleration is None:
+            tmp.pop('initial_acceleration', None)
+
         # tmp.pop('dirichlet_boundary_lambda', None)
         # tmp.pop('neumann_boundary_lambda', None)
         # tmp.pop('pressure_boundary_lambda', None)

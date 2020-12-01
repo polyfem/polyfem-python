@@ -3,6 +3,7 @@
 #include <polyfem/Logger.hpp>
 #include <polyfem/MeshUtils.hpp>
 #include <polyfem/GenericProblem.hpp>
+#include <polyfem/StringUtils.hpp>
 
 #include <geogram/basic/command_line.h>
 #include <geogram/basic/command_line_args.h>
@@ -534,4 +535,83 @@ PYBIND11_MODULE(polyfempy, m)
 						   "exports get the body ids");
 
 	solver.doc() = "Polyfem solver";
+
+	m.def(
+		"polyfem_command", [](const std::string &json_file, const std::string &febio_file, const std::string &mesh, const std::string &problem_name, const std::string &scalar_formulation, const std::string &tensor_formulation, const int n_refs, const bool skip_normalization, const std::string &solver, const int discr_order, const bool p_ref, const bool count_flipped_els, const bool force_linear_geom, const double vis_mesh_res, const bool project_to_psd, const int nl_solver_rhs_steps, const std::string &output, const std::string &vtu, const int log_level, const std::string &log_file, const bool is_quiet, const bool export_material_params) {
+			json in_args = json({});
+
+			if (!json_file.empty())
+			{
+				std::ifstream file(json_file);
+
+				if (file.is_open())
+					file >> in_args;
+				else
+					throw "unable to open " + json_file + " file";
+				file.close();
+			}
+			else
+			{
+				in_args["mesh"] = mesh;
+				in_args["force_linear_geometry"] = force_linear_geom;
+				in_args["n_refs"] = n_refs;
+				if (!problem_name.empty())
+					in_args["problem"] = problem_name;
+				in_args["normalize_mesh"] = !skip_normalization;
+				in_args["project_to_psd"] = project_to_psd;
+
+				if (!scalar_formulation.empty())
+					in_args["scalar_formulation"] = scalar_formulation;
+				if (!tensor_formulation.empty())
+					in_args["tensor_formulation"] = tensor_formulation;
+				// in_args["mixed_formulation"] = mixed_formulation;
+
+				in_args["discr_order"] = discr_order;
+				// in_args["use_spline"] = use_splines;
+				in_args["count_flipped_els"] = count_flipped_els;
+				in_args["output"] = output;
+				in_args["use_p_ref"] = p_ref;
+				// in_args["iso_parametric"] = isoparametric;
+				// in_args["serendipity"] = serendipity;
+
+				in_args["nl_solver_rhs_steps"] = nl_solver_rhs_steps;
+
+				if (!vtu.empty())
+				{
+					in_args["export"]["vis_mesh"] = vtu;
+					in_args["export"]["wire_mesh"] = polyfem::StringUtils::replace_ext(vtu, "obj");
+				}
+				if (!solver.empty())
+					in_args["solver_type"] = solver;
+
+				if (vis_mesh_res > 0)
+					in_args["vismesh_rel_area"] = vis_mesh_res;
+
+				if (export_material_params)
+					in_args["export"]["material_params"] = true;
+			}
+
+			polyfem::State state;
+			state.init_logger(log_file, log_level, is_quiet);
+			state.init(in_args);
+
+			if (!febio_file.empty())
+				state.load_febio(febio_file);
+			else
+				state.load_mesh();
+			state.compute_mesh_stats();
+
+			state.build_basis();
+
+			state.assemble_rhs();
+			state.assemble_stiffness_mat();
+
+			state.solve_problem();
+
+			state.compute_errors();
+
+			state.save_json();
+			state.export_data();
+		},
+		"runs the polyfem command, internal usage");
 }

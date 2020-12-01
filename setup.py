@@ -100,5 +100,14 @@ setup(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License"
     ],
+    python_requires='>=3.6',
+    install_requires=[
+        'numpy',
+        'argparse'],
+    entry_points={
+        'console_scripts': [
+            'polyfem = polyfempy.command:polyfem'
+        ]
+    },
     test_suite="test"
 )

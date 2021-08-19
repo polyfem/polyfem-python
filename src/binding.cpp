@@ -99,12 +99,12 @@ PYBIND11_MODULE(polyfempy, m)
 	pdes.doc() = "List of supported partial differential equations";
 
 	m.def(
-		"is_tensor", [](const std::string &pde) {
-			return polyfem::AssemblerUtils::is_tensor(pde);
-		},
+		"is_tensor", [](const std::string &pde)
+		{ return polyfem::AssemblerUtils::is_tensor(pde); },
 		"returns true if the pde is tensorial", py::arg("pde"));
 
-	const auto setting_lambda = [](polyfem::State &self, const py::object &settings) {
+	const auto setting_lambda = [](polyfem::State &self, const py::object &settings)
+	{
 		using namespace polyfem;
 
 		init_globals(self);
@@ -123,7 +123,8 @@ PYBIND11_MODULE(polyfempy, m)
 							"load PDE and problem parameters from the settings", py::arg("json"))
 
 					   .def(
-						   "set_log_level", [](polyfem::State &s, int log_level) {
+						   "set_log_level", [](polyfem::State &s, int log_level)
+						   {
 							   init_globals(s);
 							   //    py::scoped_ostream_redirect output;
 							   log_level = std::max(0, std::min(6, log_level));
@@ -132,7 +133,8 @@ PYBIND11_MODULE(polyfempy, m)
 						   "sets polyfem log level, valid value between 0 (all logs) and 6 (no logs)", py::arg("log_level"))
 
 					   .def(
-						   "load_mesh_from_settings", [](polyfem::State &s, const bool normalize_mesh, const double vismesh_rel_area, const int n_refs, const double boundary_id_threshold) {
+						   "load_mesh_from_settings", [](polyfem::State &s, const bool normalize_mesh, const double vismesh_rel_area, const int n_refs, const double boundary_id_threshold)
+						   {
 							   init_globals(s);
 							   //    py::scoped_ostream_redirect output;
 							   s.args["normalize_mesh"] = normalize_mesh;
@@ -144,7 +146,8 @@ PYBIND11_MODULE(polyfempy, m)
 						   "Loads a mesh from the 'mesh' field of the json and 'bc_tag' if any bc tags", py::arg("normalize_mesh") = bool(false), py::arg("vismesh_rel_area") = double(0.00001), py::arg("n_refs") = int(0), py::arg("boundary_id_threshold") = double(-1))
 
 					   .def(
-						   "load_mesh_from_path", [](polyfem::State &s, const std::string &path, const bool normalize_mesh, const double vismesh_rel_area, const int n_refs, const double boundary_id_threshold) {
+						   "load_mesh_from_path", [](polyfem::State &s, const std::string &path, const bool normalize_mesh, const double vismesh_rel_area, const int n_refs, const double boundary_id_threshold)
+						   {
 							   init_globals(s);
 							   //    py::scoped_ostream_redirect output;
 							   s.args["mesh"] = path;
@@ -157,7 +160,8 @@ PYBIND11_MODULE(polyfempy, m)
 						   "Loads a mesh from the path and 'bc_tag' from the json if any bc tags", py::arg("path"), py::arg("normalize_mesh") = bool(false), py::arg("vismesh_rel_area") = double(0.00001), py::arg("n_refs") = int(0), py::arg("boundary_id_threshold") = double(-1))
 
 					   .def(
-						   "load_mesh_from_path_and_tags", [](polyfem::State &s, const std::string &path, const std::string &bc_tag, const bool normalize_mesh, const double vismesh_rel_area, const int n_refs, const double boundary_id_threshold) {
+						   "load_mesh_from_path_and_tags", [](polyfem::State &s, const std::string &path, const std::string &bc_tag, const bool normalize_mesh, const double vismesh_rel_area, const int n_refs, const double boundary_id_threshold)
+						   {
 							   init_globals(s);
 							   //    py::scoped_ostream_redirect output;
 							   s.args["mesh"] = path;
@@ -171,7 +175,8 @@ PYBIND11_MODULE(polyfempy, m)
 						   "Loads a mesh and bc_tags from path", py::arg("path"), py::arg("bc_tag_path"), py::arg("normalize_mesh") = bool(false), py::arg("vismesh_rel_area") = double(0.00001), py::arg("n_refs") = int(0), py::arg("boundary_id_threshold") = double(-1))
 
 					   .def(
-						   "set_mesh", [](polyfem::State &s, const Eigen::MatrixXd &V, const Eigen::MatrixXi &F, const bool normalize_mesh, const double vismesh_rel_area, const int n_refs, const double boundary_id_threshold) {
+						   "set_mesh", [](polyfem::State &s, const Eigen::MatrixXd &V, const Eigen::MatrixXi &F, const bool normalize_mesh, const double vismesh_rel_area, const int n_refs, const double boundary_id_threshold)
+						   {
 							   init_globals(s);
 							   //    py::scoped_ostream_redirect output;
 
@@ -191,7 +196,8 @@ PYBIND11_MODULE(polyfempy, m)
 						   "Loads a mesh from vertices and connectivity", py::arg("vertices"), py::arg("connectivity"), py::arg("normalize_mesh") = bool(false), py::arg("vismesh_rel_area") = double(0.00001), py::arg("n_refs") = int(0), py::arg("boundary_id_threshold") = double(-1))
 
 					   .def(
-						   "set_high_order_mesh", [](polyfem::State &s, const Eigen::MatrixXd &V, const Eigen::MatrixXi &F, const Eigen::MatrixXd &nodes_pos, const std::vector<std::vector<int>> &nodes_indices, const bool normalize_mesh, const double vismesh_rel_area, const int n_refs, const double boundary_id_threshold) {
+						   "set_high_order_mesh", [](polyfem::State &s, const Eigen::MatrixXd &V, const Eigen::MatrixXi &F, const Eigen::MatrixXd &nodes_pos, const std::vector<std::vector<int>> &nodes_indices, const bool normalize_mesh, const double vismesh_rel_area, const int n_refs, const double boundary_id_threshold)
+						   {
 							   init_globals(s);
 							   //    py::scoped_ostream_redirect output;
 
@@ -212,21 +218,24 @@ PYBIND11_MODULE(polyfempy, m)
 						   "Loads an high order mesh from vertices, connectivity, nodes, and node indices mapping element to nodes", py::arg("vertices"), py::arg("connectivity"), py::arg("nodes_pos"), py::arg("nodes_indices"), py::arg("normalize_mesh") = bool(false), py::arg("vismesh_rel_area") = double(0.00001), py::arg("n_refs") = int(0), py::arg("boundary_id_threshold") = double(-1))
 
 					   .def(
-						   "set_boundary_side_set_from_bary", [](polyfem::State &s, const std::function<int(const polyfem::RowVectorNd &)> &boundary_marker) {
+						   "set_boundary_side_set_from_bary", [](polyfem::State &s, const std::function<int(const polyfem::RowVectorNd &)> &boundary_marker)
+						   {
 							   init_globals(s);
 							   //    py::scoped_ostream_redirect output;
 							   s.mesh->compute_boundary_ids(boundary_marker);
 						   },
 						   "Sets the side set for the boundary conditions, the functions takes the barycenter of the boundary (edge or face)", py::arg("boundary_marker"))
 					   .def(
-						   "set_boundary_side_set_from_bary_and_boundary", [](polyfem::State &s, const std::function<int(const polyfem::RowVectorNd &, bool)> &boundary_marker) {
+						   "set_boundary_side_set_from_bary_and_boundary", [](polyfem::State &s, const std::function<int(const polyfem::RowVectorNd &, bool)> &boundary_marker)
+						   {
 							   init_globals(s);
 							   //    py::scoped_ostream_redirect output;
 							   s.mesh->compute_boundary_ids(boundary_marker);
 						   },
 						   "Sets the side set for the boundary conditions, the functions takes the barycenter of the boundary (edge or face) and a flag that says if the element is boundary", py::arg("boundary_marker"))
 					   .def(
-						   "set_boundary_side_set_from_v_ids", [](polyfem::State &s, const std::function<int(const std::vector<int> &, bool)> &boundary_marker) {
+						   "set_boundary_side_set_from_v_ids", [](polyfem::State &s, const std::function<int(const std::vector<int> &, bool)> &boundary_marker)
+						   {
 							   init_globals(s);
 							   //    py::scoped_ostream_redirect output;
 							   s.mesh->compute_boundary_ids(boundary_marker);
@@ -234,14 +243,16 @@ PYBIND11_MODULE(polyfempy, m)
 						   "Sets the side set for the boundary conditions, the functions takes the sorted list of vertex id and a flag that says if the element is boundary", py::arg("boundary_marker"))
 
 					   .def(
-						   "set_rhs_from_path", [](polyfem::State &s, std::string &path) {
+						   "set_rhs_from_path", [](polyfem::State &s, std::string &path)
+						   {
 							   init_globals(s);
 							   //    py::scoped_ostream_redirect output;
 							   s.args["rhs_path"] = path;
 						   },
 						   "Loads the rhs from a file", py::arg("path"))
 					   .def(
-						   "set_rhs", [](polyfem::State &s, const Eigen::MatrixXd &rhs) {
+						   "set_rhs", [](polyfem::State &s, const Eigen::MatrixXd &rhs)
+						   {
 							   init_globals(s);
 							   //    py::scoped_ostream_redirect output;
 							   s.rhs_in = rhs;
@@ -249,7 +260,8 @@ PYBIND11_MODULE(polyfempy, m)
 						   "Sets the rhs", py::arg("matrix"))
 
 					   .def(
-						   "solve", [](polyfem::State &s) {
+						   "solve", [](polyfem::State &s)
+						   {
 							   init_globals(s);
 							   //    py::scoped_ostream_redirect output;
 							   s.compute_mesh_stats();
@@ -267,7 +279,8 @@ PYBIND11_MODULE(polyfempy, m)
 						   "solve the pde")
 
 					   .def(
-						   "compute_errors", [](polyfem::State &s) {
+						   "compute_errors", [](polyfem::State &s)
+						   {
 							   init_globals(s);
 							   //    py::scoped_ostream_redirect output;
 
@@ -276,7 +289,8 @@ PYBIND11_MODULE(polyfempy, m)
 						   "compute the error")
 
 					   .def(
-						   "get_log", [](polyfem::State &s) {
+						   "get_log", [](polyfem::State &s)
+						   {
 							   //    py::scoped_ostream_redirect output;
 							   std::stringstream ss;
 							   s.save_json(ss);
@@ -286,7 +300,8 @@ PYBIND11_MODULE(polyfempy, m)
 
 					   //    .def("export_data", [](polyfem::State &s) { py::scoped_ostream_redirect output; s.export_data(); }, "exports all data specified in the settings")
 					   .def(
-						   "export_vtu", [](polyfem::State &s, std::string &path, bool boundary_only) {
+						   "export_vtu", [](polyfem::State &s, std::string &path, bool boundary_only)
+						   {
 							   //    py::scoped_ostream_redirect output;
 							   const bool tmp = s.args["export"]["vis_boundary_only"];
 							   s.args["export"]["vis_boundary_only"] = boundary_only;
@@ -297,11 +312,16 @@ PYBIND11_MODULE(polyfempy, m)
 					   //    .def("export_wire", [](polyfem::State &s, std::string &path, bool isolines) { py::scoped_ostream_redirect output; s.save_wire(path, isolines); }, "exports wireframe of the mesh", py::arg("path"), py::arg("isolines") = false)
 
 					   .def(
-						   "get_solution", [](const polyfem::State &s) { return s.sol; }, "returns the solution")
+						   "get_solution", [](const polyfem::State &s)
+						   { return s.sol; },
+						   "returns the solution")
 					   .def(
-						   "get_pressure", [](const polyfem::State &s) { return s.pressure; }, "returns the pressure")
+						   "get_pressure", [](const polyfem::State &s)
+						   { return s.pressure; },
+						   "returns the pressure")
 					   .def(
-						   "get_sampled_solution", [](polyfem::State &s, bool boundary_only) {
+						   "get_sampled_solution", [](polyfem::State &s, bool boundary_only)
+						   {
 							   //    py::scoped_ostream_redirect output;
 							   Eigen::MatrixXd points;
 							   Eigen::MatrixXi tets;
@@ -323,7 +343,8 @@ PYBIND11_MODULE(polyfempy, m)
 						   "returns the solution on a densly sampled mesh, use 'vismesh_rel_area' to control density", py::arg("boundary_only") = bool(false))
 
 					   .def(
-						   "get_stresses", [](polyfem::State &s, bool boundary_only) {
+						   "get_stresses", [](polyfem::State &s, bool boundary_only)
+						   {
 							   //    py::scoped_ostream_redirect output;
 							   Eigen::MatrixXd points;
 							   Eigen::MatrixXi tets;
@@ -344,7 +365,8 @@ PYBIND11_MODULE(polyfempy, m)
 						   "returns the stress tensor on a densly sampled mesh, use 'vismesh_rel_area' to control density", py::arg("boundary_only") = bool(false))
 
 					   .def(
-						   "get_sampled_mises", [](polyfem::State &s, bool boundary_only) {
+						   "get_sampled_mises", [](polyfem::State &s, bool boundary_only)
+						   {
 							   //    py::scoped_ostream_redirect output;
 							   Eigen::MatrixXd points;
 							   Eigen::MatrixXi tets;
@@ -365,7 +387,8 @@ PYBIND11_MODULE(polyfempy, m)
 						   "returns the von mises stresses on a densly sampled mesh, use 'vismesh_rel_area' to control density", py::arg("boundary_only") = bool(false))
 
 					   .def(
-						   "get_sampled_mises_avg", [](polyfem::State &s, bool boundary_only) {
+						   "get_sampled_mises_avg", [](polyfem::State &s, bool boundary_only)
+						   {
 							   //    py::scoped_ostream_redirect output;
 							   Eigen::MatrixXd points;
 							   Eigen::MatrixXi tets;
@@ -386,7 +409,8 @@ PYBIND11_MODULE(polyfempy, m)
 						   "returns the von mises stresses and stress tensor averaged around a vertex on a densly sampled mesh, use 'vismesh_rel_area' to control density", py::arg("boundary_only") = bool(false))
 
 					   .def(
-						   "get_sampled_traction_forces", [](polyfem::State &s, const bool apply_displacement, const bool compute_avg) {
+						   "get_sampled_traction_forces", [](polyfem::State &s, const bool apply_displacement, const bool compute_avg)
+						   {
 							   //    py::scoped_ostream_redirect output;
 
 							   if (!s.mesh)
@@ -396,7 +420,7 @@ PYBIND11_MODULE(polyfempy, m)
 							   if (s.problem->is_scalar())
 								   throw pybind11::value_error("Define a tensor problem!");
 
-							   Eigen::MatrixXd result;
+							   Eigen::MatrixXd result, stresses, mises;
 
 							   Eigen::MatrixXd v_surf;
 							   Eigen::MatrixXi f_surf;
@@ -425,17 +449,18 @@ PYBIND11_MODULE(polyfempy, m)
 							   }
 
 							   if (apply_displacement)
-								   s.interpolate_boundary_tensor_function(v_surf, f_surf, s.sol, s.sol, compute_avg, result);
+								   s.interpolate_boundary_tensor_function(v_surf, f_surf, s.sol, s.sol, compute_avg, result, stresses, mises);
 							   else
-								   s.interpolate_boundary_tensor_function(v_surf, f_surf, s.sol, compute_avg, result);
+								   s.interpolate_boundary_tensor_function(v_surf, f_surf, s.sol, compute_avg, result, stresses, mises);
 
-							   return py::make_tuple(v_surf, f_surf, result);
+							   return py::make_tuple(v_surf, f_surf, result, stresses, mises);
 						   },
-						   "returns the traction forces computed on the surface", py::arg("apply_displacement") = bool(false), py::arg("compute_avg") = bool(true))
+						   "returns the traction forces, stresses, and von mises computed on the surface", py::arg("apply_displacement") = bool(false), py::arg("compute_avg") = bool(true))
 
 					   ////////////////////////////////////////////////////////////////////////////////////////////
 					   .def(
-						   "get_sampled_points_frames", [](polyfem::State &s) {
+						   "get_sampled_points_frames", [](polyfem::State &s)
+						   {
 							   //    py::scoped_ostream_redirect output;
 							   assert(!s.solution_frames.empty());
 
@@ -451,7 +476,8 @@ PYBIND11_MODULE(polyfempy, m)
 						   "returns the points frames for a time dependent problem on a densly sampled mesh, use 'vismesh_rel_area' to control density")
 
 					   .def(
-						   "get_sampled_connectivity_frames", [](polyfem::State &s) {
+						   "get_sampled_connectivity_frames", [](polyfem::State &s)
+						   {
 							   //    py::scoped_ostream_redirect output;
 							   assert(!s.solution_frames.empty());
 
@@ -465,7 +491,8 @@ PYBIND11_MODULE(polyfempy, m)
 						   "returns the connectivity frames for a time dependent problem on a densly sampled mesh, use 'vismesh_rel_area' to control density")
 
 					   .def(
-						   "get_sampled_solution_frames", [](polyfem::State &s) {
+						   "get_sampled_solution_frames", [](polyfem::State &s)
+						   {
 							   //    py::scoped_ostream_redirect output;
 							   assert(!s.solution_frames.empty());
 
@@ -481,7 +508,8 @@ PYBIND11_MODULE(polyfempy, m)
 						   "returns the solution frames for a time dependent problem on a densly sampled mesh, use 'vismesh_rel_area' to control density")
 
 					   .def(
-						   "get_sampled_mises_frames", [](polyfem::State &s) {
+						   "get_sampled_mises_frames", [](polyfem::State &s)
+						   {
 							   //    py::scoped_ostream_redirect output;
 							   assert(!s.solution_frames.empty());
 
@@ -495,7 +523,8 @@ PYBIND11_MODULE(polyfempy, m)
 						   "returns the von mises stresses frames on a densly sampled mesh, use 'vismesh_rel_area' to control density")
 
 					   .def(
-						   "get_sampled_mises_avg_frames", [](polyfem::State &s) {
+						   "get_sampled_mises_avg_frames", [](polyfem::State &s)
+						   {
 							   //    py::scoped_ostream_redirect output;
 							   assert(!s.solution_frames.empty());
 
@@ -509,7 +538,8 @@ PYBIND11_MODULE(polyfempy, m)
 						   "returns the von mises stresses per frame averaged around a vertex on a densly sampled mesh, use 'vismesh_rel_area' to control density")
 
 					   .def(
-						   "get_boundary_sidesets", [](polyfem::State &s) {
+						   "get_boundary_sidesets", [](polyfem::State &s)
+						   {
 							   //    py::scoped_ostream_redirect output;
 							   Eigen::MatrixXd points;
 							   Eigen::MatrixXi faces;
@@ -521,7 +551,8 @@ PYBIND11_MODULE(polyfempy, m)
 						   },
 						   "exports get the boundary sideset, edges in 2d or trangles in 3d")
 					   .def(
-						   "get_body_ids", [](polyfem::State &s) {
+						   "get_body_ids", [](polyfem::State &s)
+						   {
 							   //    py::scoped_ostream_redirect output;
 							   Eigen::MatrixXd points;
 							   Eigen::MatrixXi tets;
@@ -537,7 +568,8 @@ PYBIND11_MODULE(polyfempy, m)
 	solver.doc() = "Polyfem solver";
 
 	m.def(
-		"polyfem_command", [](const std::string &json_file, const std::string &febio_file, const std::string &mesh, const std::string &problem_name, const std::string &scalar_formulation, const std::string &tensor_formulation, const int n_refs, const bool skip_normalization, const std::string &solver, const int discr_order, const bool p_ref, const bool count_flipped_els, const bool force_linear_geom, const double vis_mesh_res, const bool project_to_psd, const int nl_solver_rhs_steps, const std::string &output, const std::string &vtu, const int log_level, const std::string &log_file, const bool is_quiet, const bool export_material_params) {
+		"polyfem_command", [](const std::string &json_file, const std::string &febio_file, const std::string &mesh, const std::string &problem_name, const std::string &scalar_formulation, const std::string &tensor_formulation, const int n_refs, const bool skip_normalization, const std::string &solver, const int discr_order, const bool p_ref, const bool count_flipped_els, const bool force_linear_geom, const double vis_mesh_res, const bool project_to_psd, const int nl_solver_rhs_steps, const std::string &output, const std::string &vtu, const int log_level, const std::string &log_file, const bool is_quiet, const bool export_material_params)
+		{
 			json in_args = json({});
 
 			if (!json_file.empty())
@@ -596,7 +628,7 @@ PYBIND11_MODULE(polyfempy, m)
 			state.init(in_args);
 
 			if (!febio_file.empty())
-				state.load_febio(febio_file);
+				state.load_febio(febio_file, in_args);
 			else
 				state.load_mesh();
 			state.compute_mesh_stats();

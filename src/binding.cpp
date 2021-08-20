@@ -600,7 +600,66 @@ PYBIND11_MODULE(polyfempy, m)
 
 							   return py::make_tuple(points, tets, el_id);
 						   },
-						   "exports get the body ids");
+						   "exports get the body ids")
+					   .def(
+						   "update_dirichlet_boundary", [](polyfem::State &self, const int id, const py::object &val, const bool isx, const bool isy, const bool isz, const std::string &interp)
+						   {
+							   using namespace polyfem;
+							   // py::scoped_ostream_redirect output;
+							   const std::string json_string = py::str(val);
+
+							   if (GenericTensorProblem *prob = dynamic_cast<GenericTensorProblem *>(self.problem.get()))
+							   {
+								   prob->update_dirichlet_boundary(id, json::parse(json_string), isx, isy, isz, interp);
+							   }
+							   else if (GenericScalarProblem *prob = dynamic_cast<GenericScalarProblem *>(self.problem.get()))
+							   {
+								   prob->update_dirichlet_boundary(id, json::parse(json_string), interp);
+							   }
+							   else
+							   {
+								   throw "Updating BC works only for GenericProblems";
+							   }
+						   },
+						   "updates dirichlet boundary", py::arg("id"), py::arg("val"), py::arg("isx") = bool(true), py::arg("isy") = bool(true), py::arg("isz") = bool(true), py::arg("interp") = std::string(""))
+					   .def(
+						   "update_neumann_boundary", [](polyfem::State &self, const int id, const py::object &val, const std::string &interp)
+						   {
+							   using namespace polyfem;
+							   // py::scoped_ostream_redirect output;
+							   const std::string json_string = py::str(val);
+
+							   if (GenericTensorProblem *prob = dynamic_cast<GenericTensorProblem *>(self.problem.get()))
+							   {
+								   prob->update_neumann_boundary(id, json::parse(json_string), interp);
+							   }
+							   else if (GenericScalarProblem *prob = dynamic_cast<GenericScalarProblem *>(self.problem.get()))
+							   {
+								   prob->update_neumann_boundary(id, json::parse(json_string), interp);
+							   }
+							   else
+							   {
+								   throw "Updating BC works only for GenericProblems";
+							   }
+						   },
+						   "updates neumann boundary", py::arg("id"), py::arg("val"), py::arg("interp") = std::string(""))
+					   .def(
+						   "update_pressure_boundary", [](polyfem::State &self, const int id, const py::object &val, const std::string &interp)
+						   {
+							   using namespace polyfem;
+							   // py::scoped_ostream_redirect output;
+							   const std::string json_string = py::str(val);
+
+							   if (GenericTensorProblem *prob = dynamic_cast<GenericTensorProblem *>(self.problem.get()))
+							   {
+								   prob->update_pressure_boundary(id, json::parse(json_string), interp);
+							   }
+							   else
+							   {
+								   throw "Updating BC works only for Tensor GenericProblems";
+							   }
+						   },
+						   "updates pressure boundary", py::arg("id"), py::arg("val"), py::arg("interp") = std::string(""));
 
 	solver.doc() = "Polyfem solver";
 

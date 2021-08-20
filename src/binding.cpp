@@ -277,6 +277,43 @@ PYBIND11_MODULE(polyfempy, m)
 							   s.solve_export_to_file = true;
 						   },
 						   "solve the pde")
+					   .def(
+						   "init_timestepping", [](polyfem::State &s, const double t0, const double dt)
+						   {
+							   init_globals(s);
+							   //    py::scoped_ostream_redirect output;
+							   s.compute_mesh_stats();
+
+							   s.build_basis();
+
+							   s.assemble_rhs();
+							   s.assemble_stiffness_mat();
+
+							   s.solution_frames.clear();
+							   Eigen::VectorXd _;
+							   s.init_transient(_);
+							   const polyfem::RhsAssembler &rhs_assembler = *s.step_data.rhs_assembler;
+							   s.solve_transient_tensor_non_linear_init(t0, dt, rhs_assembler);
+						   },
+						   "initialize timestepping", py::arg("t0"), py::arg("dt"))
+					   .def(
+						   "step_in_time", [](polyfem::State &s, const double t0, const double dt, const int t)
+						   {
+							   //    std::cout << s.step_data.rhs_assembler->problem_ << std::endl;
+							   //    std::cout << &s.step_data.nl_problem->rhs_assembler.problem_ << std::endl;
+
+							   //    std::cout << &s.step_data.nl_problem->rhs_assembler << std::endl;
+							   //    std::cout << s.step_data.rhs_assembler << std::endl;
+
+							   //    std::cout << s.step_data.rhs_assembler->problem_->is_rhs_zero() << std::endl;
+							   //    std::cout << s.step_data.nl_problem->rhs_assembler.problem_->is_rhs_zero() << std::endl;
+							   json solver_info;
+							   s.solve_transient_tensor_non_linear_step(t0, dt, t, solver_info);
+							   std::stringstream ss;
+							   ss << solver_info.dump();
+							   return ss.str();
+						   },
+						   "step in time", py::arg("t0"), py::arg("dt"), py::arg("t"))
 
 					   .def(
 						   "compute_errors", [](polyfem::State &s)

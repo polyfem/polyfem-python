@@ -5,6 +5,8 @@
 #include <polyfem/GenericProblem.hpp>
 #include <polyfem/StringUtils.hpp>
 
+#include "raster.hpp"
+
 #include <geogram/basic/command_line.h>
 #include <geogram/basic/command_line_args.h>
 
@@ -659,7 +661,157 @@ PYBIND11_MODULE(polyfempy, m)
 								   throw "Updating BC works only for Tensor GenericProblems";
 							   }
 						   },
-						   "updates pressure boundary", py::arg("id"), py::arg("val"), py::arg("interp") = std::string(""));
+						   "updates pressure boundary", py::arg("id"), py::arg("val"), py::arg("interp") = std::string(""))
+					   .def(
+						   "render", [](polyfem::State &self, int width, int height, const Eigen::Vector3d &camera_position, const double camera_fov, const double camera_fl, const bool is_perspective, const Eigen::Vector3d &left, const Eigen::Vector3d &up, const Eigen::Vector3d &ambient_light, const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> &lights, const Eigen::Vector3d &diffuse_color, const Eigen::Vector3d &specular_color, const double specular_exponent)
+						   {
+							   using namespace renderer;
+							   using namespace Eigen;
+
+							   Material material;
+							   material.diffuse_color = diffuse_color;
+							   material.specular_color = specular_color;
+							   material.specular_exponent = specular_exponent;
+
+							   Eigen::Matrix<FrameBufferAttributes, Eigen::Dynamic, Eigen::Dynamic> frameBuffer(width, height);
+							   UniformAttributes uniform;
+
+							   const Vector3d w = -left.normalized();
+							   const Vector3d u = up.cross(w).normalized();
+							   const Vector3d v = w.cross(u);
+
+							   Matrix4d M_cam_inv;
+							   M_cam_inv << u(0), v(0), w(0), camera_position(0),
+								   u(1), v(1), w(1), camera_position(1),
+								   u(2), v(2), w(2), camera_position(2),
+								   0, 0, 0, 1;
+
+							   uniform.M_cam = M_cam_inv.inverse();
+
+							   {
+								   const double camera_ar = double(width) / height;
+								   double t = tan(camera_fov / 2) * camera_fl;
+								   double b = -t;
+								   double r = t * camera_ar;
+								   double l = -r;
+								   double n = -camera_fl;
+								   double f = 5 * n;
+
+								   uniform.M_orth << 2 / (r - l), 0, 0, -(r + l) / (r - l),
+									   0, 2 / (t - b), 0, -(t + b) / (t - b),
+									   0, 0, 2 / (n - f), -(n + f) / (n - f),
+									   0, 0, 0, 1;
+								   Matrix4d P;
+								   if (is_perspective)
+								   {
+									   P << n, 0, 0, 0,
+										   0, n, 0, 0,
+										   0, 0, n + f, -f * n,
+										   0, 0, 1, 0;
+								   }
+								   else
+								   {
+									   P << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1;
+								   }
+
+								   uniform.M = uniform.M_orth * P * uniform.M_cam;
+							   }
+
+							   Program program;
+							   program.VertexShader = [&](const VertexAttributes &va, const UniformAttributes &uniform)
+							   {
+								   VertexAttributes out;
+								   out.position = uniform.M * va.position;
+								   Vector3d color = ambient_light;
+
+								   Vector3d hit(va.position(0), va.position(1), va.position(2));
+								   for (const auto &l : lights)
+								   {
+									   Vector3d Li = (l.first - hit).normalized();
+									   Vector3d N = va.normal;
+									   Vector3d diffuse = va.material.diffuse_color * std::max(Li.dot(N), 0.0);
+									   Vector3d H;
+									   if (is_perspective)
+									   {
+										   H = (Li + (camera_position - hit).normalized()).normalized();
+									   }
+									   else
+									   {
+										   H = (Li - left.normalized()).normalized();
+									   }
+									   const Vector3d specular = va.material.specular_color * std::pow(std::max(N.dot(H), 0.0), va.material.specular_exponent);
+									   const Vector3d D = l.first - hit;
+									   color += (diffuse + specular).cwiseProduct(l.second) / D.squaredNorm();
+								   }
+								   out.color = color;
+								   return out;
+							   };
+
+							   program.FragmentShader = [](const VertexAttributes &va, const UniformAttributes &uniform)
+							   {
+								   FragmentAttributes out(va.color(0), va.color(1), va.color(2));
+								   out.depth = -va.position(2);
+								   return out;
+							   };
+
+							   program.BlendingShader = [](const FragmentAttributes &fa, const FrameBufferAttributes &previous)
+							   {
+								   if (fa.depth < previous.depth)
+								   {
+									   FrameBufferAttributes out(fa.color[0] * 255, fa.color[1] * 255, fa.color[2] * 255, fa.color[3] * 255);
+									   out.depth = fa.depth;
+									   return out;
+								   }
+								   else
+								   {
+									   return previous;
+								   }
+							   };
+
+							   const Eigen::MatrixXd tmp = self.boundary_nodes_pos + self.sol;
+							   Eigen::MatrixXd vnormals(tmp.rows(), 3);
+							   //    Eigen::MatrixXd areas(tmp.rows(), 1);
+							   vnormals.setZero();
+							   //    areas.setZero();
+							   Eigen::MatrixXd fnormals(self.boundary_triangles.rows(), 3);
+
+							   for (int i = 0; i < self.boundary_triangles.rows(); ++i)
+							   {
+								   const Vector3d l1 = tmp.row(self.boundary_triangles(i, 1)) - tmp.row(self.boundary_triangles(i, 0));
+								   const Vector3d l2 = tmp.row(self.boundary_triangles(i, 2)) - tmp.row(self.boundary_triangles(i, 0));
+								   const auto nn = l1.cross(l2);
+								   const double area = nn.norm();
+								   fnormals.row(i) = nn / area;
+
+								   for (int j = 0; j < 3; j++)
+								   {
+									   int vid = self.boundary_triangles(i, j);
+									   vnormals.row(vid) += nn;
+									   //    areas(vid) += area;
+								   }
+							   }
+
+							   std::vector<VertexAttributes> vertices;
+							   for (int i = 0; i < self.boundary_triangles.rows(); ++i)
+							   {
+								   for (int j = 0; j < 3; j++)
+								   {
+									   int vid = self.boundary_triangles(i, j);
+									   VertexAttributes va(tmp(vid, 0), tmp(vid, 1), tmp(vid, 2));
+									   va.material = material;
+									   va.normal = vnormals.row(vid).normalized();
+									   vertices.push_back(va);
+								   }
+							   }
+
+							   rasterize_triangles(program, uniform, vertices, frameBuffer);
+
+							   std::vector<uint8_t> image;
+							   framebuffer_to_uint8(frameBuffer, image);
+
+							   return image;
+						   },
+						   "renders scene");
 
 	solver.doc() = "Polyfem solver";
 

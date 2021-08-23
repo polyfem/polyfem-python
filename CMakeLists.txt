@@ -58,7 +58,7 @@ polyfem_python_download_data()
 ################################################################################
 # Subdirectories
 ################################################################################
-add_library(polyfempy MODULE src/binding.cpp)
+add_library(polyfempy MODULE src/binding.cpp src/raster.cpp)
 target_link_libraries(polyfempy PRIVATE polyfem)
 target_link_libraries(polyfempy PRIVATE pybind11::module)
 set_target_properties(polyfempy PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}" SUFFIX "${PYTHON_MODULE_EXTENSION}")

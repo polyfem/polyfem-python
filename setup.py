@@ -9,6 +9,8 @@ from distutils.version import LooseVersion
 from setuptools import setup, Extension, find_packages
 from setuptools.command.build_ext import build_ext
 
+from distutils.sysconfig import get_python_inc
+
 
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=''):
@@ -41,9 +43,13 @@ class CMakeBuild(build_ext):
         extdir = os.path.join(os.path.abspath(os.path.dirname(
             self.get_ext_fullpath(ext.name))), "polyfempy")
 
+        python_include_directory = str(get_python_inc())
+
         cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
                       '-DPYTHON_EXECUTABLE=' + sys.executable,
+                      '-DPYTHON_INCLUDE_DIR=' + python_include_directory,
                       '-DPOLYSOLVE_WITH_PARDISO=OFF',
+                      #   '-DPOLYFEM_THREADING=NONE',
                       '-DPOLYFEM_NO_UI=ON',
                       '-DPOLYFEM_WITH_APPS=OFF',
                       '-DPOLYFEM_WITH_MISC=OFF',

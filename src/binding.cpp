@@ -198,7 +198,7 @@ PYBIND11_MODULE(polyfempy, m)
 						   "Loads a mesh from vertices and connectivity", py::arg("vertices"), py::arg("connectivity"), py::arg("normalize_mesh") = bool(false), py::arg("vismesh_rel_area") = double(0.00001), py::arg("n_refs") = int(0), py::arg("boundary_id_threshold") = double(-1))
 
 					   .def(
-						   "set_high_order_mesh", [](polyfem::State &s, const Eigen::MatrixXd &V, const Eigen::MatrixXi &F, const Eigen::MatrixXd &nodes_pos, const std::vector<std::vector<int>> &nodes_indices, const bool normalize_mesh, const double vismesh_rel_area, const int n_refs, const double boundary_id_threshold)
+						   "set_high_order_mesh", [](polyfem::State &s, const Eigen::MatrixXd &V, const Eigen::MatrixXi &F, const Eigen::MatrixXd &nodes_pos, const std::vector<std::vector<int> > &nodes_indices, const bool normalize_mesh, const double vismesh_rel_area, const int n_refs, const double boundary_id_threshold)
 						   {
 							   init_globals(s);
 							   //    py::scoped_ostream_redirect output;
@@ -488,9 +488,9 @@ PYBIND11_MODULE(polyfempy, m)
 							   }
 
 							   if (apply_displacement)
-								   s.interpolate_boundary_tensor_function(v_surf, f_surf, s.sol, s.sol, compute_avg, result, stresses, mises);
+								   s.interpolate_boundary_tensor_function(v_surf, f_surf, s.sol, s.sol, compute_avg, result, stresses, mises, true);
 							   else
-								   s.interpolate_boundary_tensor_function(v_surf, f_surf, s.sol, compute_avg, result, stresses, mises);
+								   s.interpolate_boundary_tensor_function(v_surf, f_surf, s.sol, compute_avg, result, stresses, mises, true);
 
 							   return py::make_tuple(v_surf, f_surf, result, stresses, mises);
 						   },
@@ -663,7 +663,7 @@ PYBIND11_MODULE(polyfempy, m)
 						   },
 						   "updates pressure boundary", py::arg("id"), py::arg("val"), py::arg("interp") = std::string(""))
 					   .def(
-						   "render", [](polyfem::State &self, int width, int height, const Eigen::Vector3d &camera_position, const double camera_fov, const double camera_fl, const bool is_perspective, const Eigen::Vector3d &left, const Eigen::Vector3d &up, const Eigen::Vector3d &ambient_light, const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> &lights, const Eigen::Vector3d &diffuse_color, const Eigen::Vector3d &specular_color, const double specular_exponent)
+						   "render", [](polyfem::State &self, int width, int height, const Eigen::Vector3d &camera_position, const double camera_fov, const double camera_fl, const bool is_perspective, const Eigen::Vector3d &left, const Eigen::Vector3d &up, const Eigen::Vector3d &ambient_light, const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d> > &lights, const Eigen::Vector3d &diffuse_color, const Eigen::Vector3d &specular_color, const double specular_exponent)
 						   {
 							   using namespace renderer;
 							   using namespace Eigen;

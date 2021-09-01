@@ -40,15 +40,15 @@ class BendingTest(unittest.TestCase):
         vertices = pts + disp
         mises, _ = solver.get_sampled_mises_avg()
 
-        # vs, fs, tr = solver.get_sampled_traction_forces()
-        # assert(vs.shape[0] > 0)
-        # assert(vs.shape[1] == 3)
+        vs, fs, tr = solver.get_sampled_traction_forces()
+        assert(vs.shape[0] > 0)
+        assert(vs.shape[1] == 3)
 
-        # assert(fs.shape[0] > 0)
-        # assert(fs.shape[1] == 3)
+        assert(fs.shape[0] > 0)
+        assert(fs.shape[1] == 3)
 
-        # assert(tr.shape[0] == fs.shape[0])
-        # assert(tr.shape[1] == 3)
+        assert(tr.shape[0] == fs.shape[0])
+        assert(tr.shape[1] == 3)
 
         # plot(vertices, tets, mises)
 

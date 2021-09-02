@@ -19,6 +19,8 @@
 #include <thread>
 #endif
 
+#include <pybind11_json/pybind11_json.hpp>
+
 #include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>
 #include <pybind11/functional.h>
@@ -311,9 +313,7 @@ PYBIND11_MODULE(polyfempy, m)
 							   //    std::cout << s.step_data.nl_problem->rhs_assembler.problem_->is_rhs_zero() << std::endl;
 							   json solver_info;
 							   s.solve_transient_tensor_non_linear_step(t0, dt, t, solver_info);
-							   std::stringstream ss;
-							   ss << solver_info.dump();
-							   return ss.str();
+							   return solver_info;
 						   },
 						   "step in time", py::arg("t0"), py::arg("dt"), py::arg("t"))
 
@@ -331,11 +331,11 @@ PYBIND11_MODULE(polyfempy, m)
 						   "get_log", [](polyfem::State &s)
 						   {
 							   //    py::scoped_ostream_redirect output;
-							   std::stringstream ss;
-							   s.save_json(ss);
-							   return ss.str();
+							   json out;
+							   s.save_json(out);
+							   return out;
 						   },
-						   "gets the log as json")
+						   "gets the log")
 
 					   //    .def("export_data", [](polyfem::State &s) { py::scoped_ostream_redirect output; s.export_data(); }, "exports all data specified in the settings")
 					   .def(
@@ -604,19 +604,19 @@ PYBIND11_MODULE(polyfempy, m)
 						   },
 						   "exports get the body ids")
 					   .def(
-						   "update_dirichlet_boundary", [](polyfem::State &self, const int id, const py::object &val, const bool isx, const bool isy, const bool isz, const std::string &interp)
+						   "update_dirichlet_boundary", [](polyfem::State &self, const int id, const py::dict &val, const bool isx, const bool isy, const bool isz, const std::string &interp)
 						   {
 							   using namespace polyfem;
 							   // py::scoped_ostream_redirect output;
-							   const std::string json_string = py::str(val);
+							   const json json_val = val;
 
 							   if (GenericTensorProblem *prob = dynamic_cast<GenericTensorProblem *>(self.problem.get()))
 							   {
-								   prob->update_dirichlet_boundary(id, json::parse(json_string), isx, isy, isz, interp);
+								   prob->update_dirichlet_boundary(id, json_val, isx, isy, isz, interp);
 							   }
 							   else if (GenericScalarProblem *prob = dynamic_cast<GenericScalarProblem *>(self.problem.get()))
 							   {
-								   prob->update_dirichlet_boundary(id, json::parse(json_string), interp);
+								   prob->update_dirichlet_boundary(id, json_val, interp);
 							   }
 							   else
 							   {
@@ -625,19 +625,19 @@ PYBIND11_MODULE(polyfempy, m)
 						   },
 						   "updates dirichlet boundary", py::arg("id"), py::arg("val"), py::arg("isx") = bool(true), py::arg("isy") = bool(true), py::arg("isz") = bool(true), py::arg("interp") = std::string(""))
 					   .def(
-						   "update_neumann_boundary", [](polyfem::State &self, const int id, const py::object &val, const std::string &interp)
+						   "update_neumann_boundary", [](polyfem::State &self, const int id, const py::dict &val, const std::string &interp)
 						   {
 							   using namespace polyfem;
 							   // py::scoped_ostream_redirect output;
-							   const std::string json_string = py::str(val);
+							   const json json_val = val;
 
 							   if (GenericTensorProblem *prob = dynamic_cast<GenericTensorProblem *>(self.problem.get()))
 							   {
-								   prob->update_neumann_boundary(id, json::parse(json_string), interp);
+								   prob->update_neumann_boundary(id, json_val, interp);
 							   }
 							   else if (GenericScalarProblem *prob = dynamic_cast<GenericScalarProblem *>(self.problem.get()))
 							   {
-								   prob->update_neumann_boundary(id, json::parse(json_string), interp);
+								   prob->update_neumann_boundary(id, json_val, interp);
 							   }
 							   else
 							   {
@@ -646,15 +646,15 @@ PYBIND11_MODULE(polyfempy, m)
 						   },
 						   "updates neumann boundary", py::arg("id"), py::arg("val"), py::arg("interp") = std::string(""))
 					   .def(
-						   "update_pressure_boundary", [](polyfem::State &self, const int id, const py::object &val, const std::string &interp)
+						   "update_pressure_boundary", [](polyfem::State &self, const int id, const py::dict &val, const std::string &interp)
 						   {
 							   using namespace polyfem;
 							   // py::scoped_ostream_redirect output;
-							   const std::string json_string = py::str(val);
+							   const json json_val = val;
 
 							   if (GenericTensorProblem *prob = dynamic_cast<GenericTensorProblem *>(self.problem.get()))
 							   {
-								   prob->update_pressure_boundary(id, json::parse(json_string), interp);
+								   prob->update_pressure_boundary(id, json_val, interp);
 							   }
 							   else
 							   {
@@ -896,12 +896,12 @@ PYBIND11_MODULE(polyfempy, m)
 		"runs the polyfem command, internal usage");
 
 	m.def(
-		"solve_febio", [](const std::string &febio_file, const std::string &json_opts, const std::string &output_path, const int log_level)
+		"solve_febio", [](const std::string &febio_file, const py::dict &opts, const std::string &output_path, const int log_level)
 		{
 			if (febio_file.empty())
 				throw pybind11::value_error("Specify a febio file!");
 
-			json in_args = json::parse(json_opts);
+			json in_args = opts.is_none() ? json({}) : json(opts);
 
 			if (!output_path.empty())
 			{
@@ -936,7 +936,7 @@ PYBIND11_MODULE(polyfempy, m)
 			state.save_json();
 			state.export_data();
 		},
-		"runs FEBio", py::arg("febio_file"), py::arg("json_opts") = std::string(""), py::arg("output_path") = std::string(""), py::arg("log_level") = 2);
+		"runs FEBio", py::arg("febio_file"), py::arg("opts") = py::none(), py::arg("output_path") = std::string(""), py::arg("log_level") = 2);
 
 	m.def("solve", [](
 					   const Eigen::MatrixXd &V, const Eigen::MatrixXi &F, const bool normalize_mesh, const double vismesh_rel_area,

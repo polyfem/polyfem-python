@@ -38,6 +38,14 @@ function(polyfem_python_download_pybind11)
     )
 endfunction()
 
+# BSD 3
+function(polyfem_python_download_pybind11_json)
+    polyfem_python_download_project(pybind11_json
+        GIT_REPOSITORY https://github.com/pybind/pybind11_json.git
+        GIT_TAG        0.2.11
+    )
+endfunction()
+
 ## data
 function(polyfem_python_download_data)
     polyfem_python_download_project(data

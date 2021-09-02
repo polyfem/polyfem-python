@@ -4,7 +4,6 @@ import platform
 import polyfempy as pf
 # from .utils import plot
 import os
-import json
 
 
 class BendingTest(unittest.TestCase):
@@ -25,7 +24,7 @@ class BendingTest(unittest.TestCase):
 
         pf.solve_febio(
             febio_file,
-            json_opts=json.dumps(opts),
+            opts=opts,
             output_path="test.vtu",
             log_level=1)
 

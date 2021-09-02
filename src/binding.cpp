@@ -198,7 +198,7 @@ PYBIND11_MODULE(polyfempy, m)
 						   "Loads a mesh from vertices and connectivity", py::arg("vertices"), py::arg("connectivity"), py::arg("normalize_mesh") = bool(false), py::arg("vismesh_rel_area") = double(0.00001), py::arg("n_refs") = int(0), py::arg("boundary_id_threshold") = double(-1))
 
 					   .def(
-						   "set_high_order_mesh", [](polyfem::State &s, const Eigen::MatrixXd &V, const Eigen::MatrixXi &F, const Eigen::MatrixXd &nodes_pos, const std::vector<std::vector<int> > &nodes_indices, const bool normalize_mesh, const double vismesh_rel_area, const int n_refs, const double boundary_id_threshold)
+						   "set_high_order_mesh", [](polyfem::State &s, const Eigen::MatrixXd &V, const Eigen::MatrixXi &F, const Eigen::MatrixXd &nodes_pos, const std::vector<std::vector<int>> &nodes_indices, const bool normalize_mesh, const double vismesh_rel_area, const int n_refs, const double boundary_id_threshold)
 						   {
 							   init_globals(s);
 							   //    py::scoped_ostream_redirect output;
@@ -663,7 +663,7 @@ PYBIND11_MODULE(polyfempy, m)
 						   },
 						   "updates pressure boundary", py::arg("id"), py::arg("val"), py::arg("interp") = std::string(""))
 					   .def(
-						   "render", [](polyfem::State &self, int width, int height, const Eigen::Vector3d &camera_position, const double camera_fov, const double camera_fl, const bool is_perspective, const Eigen::Vector3d &left, const Eigen::Vector3d &up, const Eigen::Vector3d &ambient_light, const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d> > &lights, const Eigen::Vector3d &diffuse_color, const Eigen::Vector3d &specular_color, const double specular_exponent)
+						   "render", [](polyfem::State &self, int width, int height, const Eigen::Vector3d &camera_position, const double camera_fov, const double camera_fl, const bool is_perspective, const Eigen::Vector3d &left, const Eigen::Vector3d &up, const Eigen::Vector3d &ambient_light, const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> &lights, const Eigen::Vector3d &diffuse_color, const Eigen::Vector3d &specular_color, const double specular_exponent)
 						   {
 							   using namespace renderer;
 							   using namespace Eigen;
@@ -894,4 +894,124 @@ PYBIND11_MODULE(polyfempy, m)
 			state.export_data();
 		},
 		"runs the polyfem command, internal usage");
+
+	m.def(
+		"solve_febio", [](const std::string &febio_file, const std::string &json_opts, const std::string &output_path, const int log_level)
+		{
+			if (febio_file.empty())
+				throw pybind11::value_error("Specify a febio file!");
+
+			json in_args = json::parse(json_opts);
+
+			if (!output_path.empty())
+			{
+				in_args["export"]["paraview"] = output_path;
+				in_args["export"]["wire_mesh"] = polyfem::StringUtils::replace_ext(output_path, "obj");
+				in_args["export"]["material_params"] = true;
+				in_args["export"]["body_ids"] = true;
+				in_args["export"]["contact_forces"] = true;
+				in_args["export"]["surface"] = true;
+			}
+
+			const int discr_order = in_args.contains("discr_order") ? int(in_args["discr_order"]) : 1;
+
+			if (discr_order == 1 && !in_args.contains("vismesh_rel_area"))
+				in_args["vismesh_rel_area"] = 1e10;
+
+			polyfem::State state;
+			state.init_logger("", log_level, false);
+			state.init(in_args);
+			state.load_febio(febio_file, in_args);
+			state.compute_mesh_stats();
+
+			state.build_basis();
+
+			state.assemble_rhs();
+			state.assemble_stiffness_mat();
+
+			state.solve_problem();
+
+			//state.compute_errors();
+
+			state.save_json();
+			state.export_data();
+		},
+		"runs FEBio", py::arg("febio_file"), py::arg("json_opts") = std::string(""), py::arg("output_path") = std::string(""), py::arg("log_level") = 2);
+
+	m.def("solve", [](
+					   const Eigen::MatrixXd &V, const Eigen::MatrixXi &F, const bool normalize_mesh, const double vismesh_rel_area,
+					   const int order, const int pressure_discr_order,
+					   const py::object &sidesets,
+					   const PDEs &pde,
+					   const py::dict &bc,
+					   const py::dict &materials,
+					   const bool has_collision, const double dhat,
+					   const double t0, const double tend, const double time_steps,
+					   const int log_level,
+					   const py::kwargs &kwargs)
+		  {
+			  std::string log_file = "";
+			  const bool is2d = V.cols() == 2;
+
+			  polyfem::State state;
+			  state.init_logger(log_file, log_level, false);
+			  json in_args = json({});
+			  in_args["normalize_mesh"] = normalize_mesh;
+			  in_args["vismesh_rel_area"] = vismesh_rel_area;
+			  in_args["discr_order"] = order;
+			  in_args["pressure_discr_order"] = pressure_discr_order;
+			  //TODO
+			  in_args["problem"] = is2d ? "GenericScalar" : "GenericTensor";
+
+			  in_args["has_collision"] = has_collision;
+			  in_args["dhat"] = dhat;
+			  in_args["t0"] = t0;
+			  in_args["tend"] = tend;
+			  in_args["time_steps"] = time_steps;
+
+			  state.init(in_args);
+
+			  if (is2d)
+				  state.mesh = std::make_unique<polyfem::Mesh2D>();
+			  else
+				  state.mesh = std::make_unique<polyfem::Mesh3D>();
+			  state.mesh->build_from_matrices(V, F);
+
+			  if (!sidesets.is_none())
+			  {
+				  if (const auto selection = static_cast<py::dict>(sidesets))
+				  {
+					  for (auto item : selection)
+					  {
+						  std::cout << "key=" << std::string(py::str(item.first)) << ", "
+									<< "value=" << std::string(py::str(item.second)) << std::endl;
+					  }
+				  }
+			  }
+
+			  state.compute_mesh_stats();
+
+			  state.build_basis();
+
+			  state.assemble_rhs();
+			  state.assemble_stiffness_mat();
+			  state.solve_problem();
+
+			  // force_linear_geometry
+			  // n_refs
+			  // vismesh_rel_area
+			  // n_boundary_samples
+			  // compute_error
+			  // project_to_psd
+			  // friction_iterations
+			  // friction_convergence_tol
+			  // time_integrator
+			  // quadrature_order
+			  //line_search
+			  // al_weight
+			  // solver_type
+			  // json
+			  // gradNorm
+			  // nl_iterations
+		  });
 }

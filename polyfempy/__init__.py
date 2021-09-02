@@ -2,6 +2,7 @@ from .polyfempy import Solver
 from .polyfempy import PDEs
 from .polyfempy import ScalarFormulations
 from .polyfempy import TensorFormulations
+from .polyfempy import solve_febio
 
 from .Settings import Settings
 from .Selection import Selection

@@ -51,7 +51,7 @@ class InflationTest(unittest.TestCase):
         solver.solve()
 
         # get the solution on a densly sampled mesh
-        vertices, tris, el_id, sol = solver.get_sampled_solution()
+        vertices, tris, el_id, bid, sol = solver.get_sampled_solution()
 
         # the dense mesh is disconnected, so we need to connecit it back
         _, res = np.unique(vertices, axis=0, return_inverse=True)

@@ -373,11 +373,17 @@ PYBIND11_MODULE(polyfempy, m)
 
 							   s.build_vis_mesh(points, tets, el_id, discr);
 
+							   Eigen::MatrixXd ids(points.rows(), 1);
+							   for (int i = 0; i < points.rows(); ++i)
+							   {
+								   ids(i) = s.mesh->get_body_id(el_id(i));
+							   }
+
 							   s.interpolate_function(points.rows(), s.sol, fun, boundary_only);
 
 							   s.args["export"]["vis_boundary_only"] = tmp;
 
-							   return py::make_tuple(points, tets, el_id, fun);
+							   return py::make_tuple(points, tets, el_id, ids, fun);
 						   },
 						   "returns the solution on a densly sampled mesh, use 'vismesh_rel_area' to control density", py::arg("boundary_only") = bool(false))
 
@@ -600,7 +606,14 @@ PYBIND11_MODULE(polyfempy, m)
 
 							   s.build_vis_mesh(points, tets, el_id, discr);
 
-							   return py::make_tuple(points, tets, el_id);
+							   Eigen::MatrixXd ids(points.rows(), 1);
+
+							   for (int i = 0; i < points.rows(); ++i)
+							   {
+								   ids(i) = s.mesh->get_body_id(el_id(i));
+							   }
+
+							   return py::make_tuple(points, tets, el_id, ids);
 						   },
 						   "exports get the body ids")
 					   .def(

@@ -36,7 +36,7 @@ class BendingTest(unittest.TestCase):
 
         solver.solve()
 
-        pts, tets, disp = solver.get_sampled_solution()
+        pts, tets, el_id, disp = solver.get_sampled_solution()
         vertices = pts + disp
         mises, _ = solver.get_sampled_mises_avg()
 

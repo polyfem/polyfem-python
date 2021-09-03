@@ -604,12 +604,11 @@ PYBIND11_MODULE(polyfempy, m)
 						   },
 						   "exports get the body ids")
 					   .def(
-						   "update_dirichlet_boundary", [](polyfem::State &self, const int id, const py::dict &val, const bool isx, const bool isy, const bool isz, const std::string &interp)
+						   "update_dirichlet_boundary", [](polyfem::State &self, const int id, const py::object &val, const bool isx, const bool isy, const bool isz, const std::string &interp)
 						   {
 							   using namespace polyfem;
 							   // py::scoped_ostream_redirect output;
 							   const json json_val = val;
-
 							   if (GenericTensorProblem *prob = dynamic_cast<GenericTensorProblem *>(self.problem.get()))
 							   {
 								   prob->update_dirichlet_boundary(id, json_val, isx, isy, isz, interp);
@@ -625,7 +624,7 @@ PYBIND11_MODULE(polyfempy, m)
 						   },
 						   "updates dirichlet boundary", py::arg("id"), py::arg("val"), py::arg("isx") = bool(true), py::arg("isy") = bool(true), py::arg("isz") = bool(true), py::arg("interp") = std::string(""))
 					   .def(
-						   "update_neumann_boundary", [](polyfem::State &self, const int id, const py::dict &val, const std::string &interp)
+						   "update_neumann_boundary", [](polyfem::State &self, const int id, const py::object &val, const std::string &interp)
 						   {
 							   using namespace polyfem;
 							   // py::scoped_ostream_redirect output;
@@ -646,7 +645,7 @@ PYBIND11_MODULE(polyfempy, m)
 						   },
 						   "updates neumann boundary", py::arg("id"), py::arg("val"), py::arg("interp") = std::string(""))
 					   .def(
-						   "update_pressure_boundary", [](polyfem::State &self, const int id, const py::dict &val, const std::string &interp)
+						   "update_pressure_boundary", [](polyfem::State &self, const int id, const py::object &val, const std::string &interp)
 						   {
 							   using namespace polyfem;
 							   // py::scoped_ostream_redirect output;
@@ -663,10 +662,42 @@ PYBIND11_MODULE(polyfempy, m)
 						   },
 						   "updates pressure boundary", py::arg("id"), py::arg("val"), py::arg("interp") = std::string(""))
 					   .def(
-						   "render", [](polyfem::State &self, int width, int height, const Eigen::Vector3d &camera_position, const double camera_fov, const double camera_fl, const bool is_perspective, const Eigen::Vector3d &left, const Eigen::Vector3d &up, const Eigen::Vector3d &ambient_light, const std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> &lights, const Eigen::Vector3d &diffuse_color, const Eigen::Vector3d &specular_color, const double specular_exponent)
+						   "render", [](polyfem::State &self, int width, int height, const Eigen::MatrixXd &camera_positionm, const double camera_fov, const double camera_fl, const bool is_perspective, const Eigen::MatrixXd &leftm, const Eigen::MatrixXd &upm, const Eigen::MatrixXd &ambient_lightm, const std::vector<std::pair<Eigen::MatrixXd, Eigen::MatrixXd>> &lights, const Eigen::MatrixXd &diffuse_colorm, const Eigen::MatrixXd &specular_colorm, const double specular_exponent)
 						   {
 							   using namespace renderer;
 							   using namespace Eigen;
+
+							   Eigen::Vector3d camera_position(0, 0, 0);
+							   Eigen::Vector3d left(1, 0, 0);
+							   Eigen::Vector3d up(0, 1, 0);
+							   Eigen::Vector3d ambient_light(0.1, 0.1, 0.1);
+							   Eigen::Vector3d diffuse_color(1, 0, 0);
+							   Eigen::Vector3d specular_color(1, 0, 0);
+
+							   if (camera_positionm.size() > 0 && camera_positionm.size() != 3)
+								   throw pybind11::value_error("camera_position have size 3");
+							   if (camera_positionm.size() == 3)
+								   camera_position << camera_positionm(0), camera_positionm(1), camera_positionm(2);
+							   if (leftm.size() > 0 && leftm.size() != 3)
+								   throw pybind11::value_error("left have size 3");
+							   if (leftm.size() == 3)
+								   left << leftm(0), leftm(1), leftm(2);
+							   if (upm.size() > 0 && upm.size() != 3)
+								   throw pybind11::value_error("up have size 3");
+							   if (upm.size() == 3)
+								   up << upm(0), upm(1), upm(2);
+							   if (ambient_lightm.size() > 0 && ambient_lightm.size() != 3)
+								   throw pybind11::value_error("ambient_light have size 3");
+							   if (ambient_lightm.size() == 3)
+								   ambient_light << ambient_lightm(0), ambient_lightm(1), ambient_lightm(2);
+							   if (diffuse_colorm.size() > 0 && diffuse_colorm.size() != 3)
+								   throw pybind11::value_error("diffuse_color have size 3");
+							   if (diffuse_colorm.size() == 3)
+								   diffuse_color << diffuse_colorm(0), diffuse_colorm(1), diffuse_colorm(2);
+							   if (specular_colorm.size() > 0 && specular_colorm.size() != 3)
+								   throw pybind11::value_error("specular_color have size 3");
+							   if (specular_colorm.size() == 3)
+								   specular_color << specular_colorm(0), specular_colorm(1), specular_colorm(2);
 
 							   Material material;
 							   material.diffuse_color = diffuse_color;
@@ -768,7 +799,18 @@ PYBIND11_MODULE(polyfempy, m)
 								   }
 							   };
 
-							   const Eigen::MatrixXd tmp = self.boundary_nodes_pos + self.sol;
+							   const int problem_dim = self.problem->is_scalar() ? 1 : self.mesh->dimension();
+
+							   Eigen::MatrixXd tmp = self.boundary_nodes_pos;
+							   assert(tmp.rows() * problem_dim == self.sol.size());
+							   for (int i = 0; i < self.sol.size(); i += problem_dim)
+							   {
+								   for (int d = 0; d < problem_dim; ++d)
+								   {
+									   tmp(i / problem_dim, d) += self.sol(i + d);
+								   }
+							   }
+
 							   Eigen::MatrixXd vnormals(tmp.rows(), 3);
 							   //    Eigen::MatrixXd areas(tmp.rows(), 1);
 							   vnormals.setZero();
@@ -811,7 +853,7 @@ PYBIND11_MODULE(polyfempy, m)
 
 							   return image;
 						   },
-						   "renders scene");
+						   "renders the scene", py::kw_only(), py::arg("width"), py::arg("height"), py::arg("camera_position") = Eigen::MatrixXd(), py::arg("camera_fov") = double(75), py::arg("camera_fl") = double(1), py::arg("is_perspective") = bool(true), py::arg("left") = Eigen::MatrixXd(), py::arg("up") = Eigen::MatrixXd(), py::arg("ambient_light") = Eigen::MatrixXd(), py::arg("lights") = std::vector<std::pair<Eigen::MatrixXd, Eigen::MatrixXd>>(), py::arg("diffuse_color") = Eigen::MatrixXd(), py::arg("specular_color") = Eigen::MatrixXd(), py::arg("specular_exponent") = double(1));
 
 	solver.doc() = "Polyfem solver";
 
@@ -968,6 +1010,10 @@ PYBIND11_MODULE(polyfempy, m)
 
 			if (!sidesets_func.is_none())
 			{
+				// const std::function<int(const polyfem::RowVectorNd &)>
+				// const std::function<int(const polyfem::RowVectorNd &, bool)>
+				// const std::function<int(const std::vector<int> &, bool)>
+
 				//TODO!
 				//   if (const auto selection = static_cast<py::dict>(sidesets_func))
 				//   {

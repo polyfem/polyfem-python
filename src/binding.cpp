@@ -377,7 +377,7 @@ PYBIND11_MODULE(polyfempy, m)
 
 							   s.args["export"]["vis_boundary_only"] = tmp;
 
-							   return py::make_tuple(points, tets, fun);
+							   return py::make_tuple(points, tets, el_id, fun);
 						   },
 						   "returns the solution on a densly sampled mesh, use 'vismesh_rel_area' to control density", py::arg("boundary_only") = bool(false))
 

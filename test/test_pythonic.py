@@ -41,7 +41,7 @@ class PythonicTest(unittest.TestCase):
         print(log["time_solving"])
 
         # Get the solution
-        pts, tris, fun = solution.get_sampled_solution()
+        pts, tris, el_id, fun = solution.get_sampled_solution()
 
 
 if __name__ == '__main__':

@@ -6,7 +6,7 @@ import polyfempy as pf
 import os
 
 
-class BendingTest(unittest.TestCase):
+class FeBioTest(unittest.TestCase):
     def test_run(self):
         root_folder = os.path.join(
             "..", "3rdparty.nosync" if platform.system() == 'Darwin' else "3rdparty", "data")
@@ -24,9 +24,9 @@ class BendingTest(unittest.TestCase):
 
         pf.solve_febio(
             febio_file,
-            opts=opts,
             output_path="test.vtu",
-            log_level=1)
+            log_level=1,
+            **opts)
 
 
 if __name__ == '__main__':

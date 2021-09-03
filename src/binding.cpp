@@ -896,12 +896,13 @@ PYBIND11_MODULE(polyfempy, m)
 		"runs the polyfem command, internal usage");
 
 	m.def(
-		"solve_febio", [](const std::string &febio_file, const py::dict &opts, const std::string &output_path, const int log_level)
+		"solve_febio", [](const std::string &febio_file, const std::string &output_path, const int log_level, const py::kwargs &kwargs)
 		{
 			if (febio_file.empty())
 				throw pybind11::value_error("Specify a febio file!");
 
-			json in_args = opts.is_none() ? json({}) : json(opts);
+			// json in_args = opts.is_none() ? json({}) : json(opts);
+			json in_args = json(static_cast<py::dict>(kwargs));
 
 			if (!output_path.empty())
 			{
@@ -936,82 +937,152 @@ PYBIND11_MODULE(polyfempy, m)
 			state.save_json();
 			state.export_data();
 		},
-		"runs FEBio", py::arg("febio_file"), py::arg("opts") = py::none(), py::arg("output_path") = std::string(""), py::arg("log_level") = 2);
+		"runs FEBio", py::arg("febio_file"), py::arg("output_path") = std::string(""), py::arg("log_level") = 2);
 
-	m.def("solve", [](
-					   const Eigen::MatrixXd &V, const Eigen::MatrixXi &F, const bool normalize_mesh, const double vismesh_rel_area,
-					   const int order, const int pressure_discr_order,
-					   const py::object &sidesets,
-					   const PDEs &pde,
-					   const py::dict &bc,
-					   const py::dict &materials,
-					   const bool has_collision, const double dhat,
-					   const double t0, const double tend, const double time_steps,
-					   const int log_level,
-					   const py::kwargs &kwargs)
-		  {
-			  std::string log_file = "";
-			  const bool is2d = V.cols() == 2;
+	m.def(
+		"solve", [](const Eigen::MatrixXd &vertices, const Eigen::MatrixXi &cells, const py::object &sidesets_func, const py::list &sidesets_selection, const py::list &body_selection, const py::list &materials, const std::string &pde, const py::list &diriclet_bc, const py::list &neumann_bc, const py::list &pressure_bc, const py::object &rhs, const bool is_time_dependent, const py::dict &expo, const int log_level, const py::kwargs &kwargs)
+		{
+			std::string log_file = "";
+			const bool is2d = vertices.cols() == 2;
 
-			  polyfem::State state;
-			  state.init_logger(log_file, log_level, false);
-			  json in_args = json({});
-			  in_args["normalize_mesh"] = normalize_mesh;
-			  in_args["vismesh_rel_area"] = vismesh_rel_area;
-			  in_args["discr_order"] = order;
-			  in_args["pressure_discr_order"] = pressure_discr_order;
-			  //TODO
-			  in_args["problem"] = is2d ? "GenericScalar" : "GenericTensor";
+			std::unique_ptr<polyfem::State> res = std::make_unique<polyfem::State>();
+			polyfem::State &state = *res;
+			state.init_logger(log_file, log_level, false);
+			// const int kwargs_size = std::distance(kwargs.begin(), kwargs.end());
+			json in_args = json(static_cast<py::dict>(kwargs));
 
-			  in_args["has_collision"] = has_collision;
-			  in_args["dhat"] = dhat;
-			  in_args["t0"] = t0;
-			  in_args["tend"] = tend;
-			  in_args["time_steps"] = time_steps;
+			if (!in_args.contains("normalize_mesh"))
+				in_args["normalize_mesh"] = false;
 
-			  state.init(in_args);
+			const bool is_scalar = polyfem::AssemblerUtils::is_scalar(pde);
+			in_args["scalar_formulation"] = "";
+			in_args["tensor_formulation"] = "";
 
-			  if (is2d)
-				  state.mesh = std::make_unique<polyfem::Mesh2D>();
-			  else
-				  state.mesh = std::make_unique<polyfem::Mesh3D>();
-			  state.mesh->build_from_matrices(V, F);
+			if (is_scalar)
+				in_args["scalar_formulation"] = pde;
+			else
+				in_args["tensor_formulation"] = pde;
+			in_args["problem"] = is_scalar ? "GenericScalar" : "GenericTensor";
 
-			  if (!sidesets.is_none())
-			  {
-				  if (const auto selection = static_cast<py::dict>(sidesets))
-				  {
-					  for (auto item : selection)
-					  {
-						  std::cout << "key=" << std::string(py::str(item.first)) << ", "
-									<< "value=" << std::string(py::str(item.second)) << std::endl;
-					  }
-				  }
-			  }
+			const int sidesets_selection_size = std::distance(sidesets_selection.begin(), sidesets_selection.end());
 
-			  state.compute_mesh_stats();
+			if (!sidesets_func.is_none())
+			{
+				//TODO!
+				//   if (const auto selection = static_cast<py::dict>(sidesets_func))
+				//   {
+				// 	  for (auto item : selection)
+				// 	  {
+				// 		  std::cout << "key=" << std::string(py::str(item.first)) << ", "
+				// 					<< "value=" << std::string(py::str(item.second)) << std::endl;
+				// 	  }
+				//   }
+			}
+			else if (sidesets_selection_size > 0 && !in_args.contains("boundary_sidesets"))
+			{
+				json selections = json::array();
 
-			  state.build_basis();
+				for (const auto &d : sidesets_selection)
+				{
+					selections.push_back(json(d));
+				}
 
-			  state.assemble_rhs();
-			  state.assemble_stiffness_mat();
-			  state.solve_problem();
+				in_args["boundary_sidesets"] = selections;
+			}
 
-			  // force_linear_geometry
-			  // n_refs
-			  // vismesh_rel_area
-			  // n_boundary_samples
-			  // compute_error
-			  // project_to_psd
-			  // friction_iterations
-			  // friction_convergence_tol
-			  // time_integrator
-			  // quadrature_order
-			  //line_search
-			  // al_weight
-			  // solver_type
-			  // json
-			  // gradNorm
-			  // nl_iterations
-		  });
+			const int body_selection_size = std::distance(body_selection.begin(), body_selection.end());
+			if (body_selection_size > 0 && !in_args.contains("body_ids"))
+			{
+				json selections = json::array();
+
+				for (const auto &d : body_selection)
+				{
+					selections.push_back(json(d));
+				}
+
+				in_args["body_ids"] = selections;
+			}
+
+			const int materials_size = std::distance(materials.begin(), materials.end());
+			if (materials_size > 1 && !in_args.contains("body_params"))
+			{
+
+				json materialss = json::array();
+
+				for (const auto &d : materials)
+				{
+					materialss.push_back(json(d));
+				}
+
+				in_args["body_params"] = materialss;
+			}
+			else if (materials_size == 1 && !in_args.contains("params"))
+			{
+				in_args["params"] = json(materials[0]);
+			}
+
+			if (!in_args.contains("problem_params"))
+				in_args["problem_params"] = {};
+
+			if (!in_args["problem_params"].contains("is_time_dependent"))
+				in_args["problem_params"]["is_time_dependent"] = is_time_dependent;
+
+			const int diriclet_bc_size = std::distance(diriclet_bc.begin(), diriclet_bc.end());
+			if (diriclet_bc_size > 0 && !in_args["problem_params"].contains("dirichlet_boundary"))
+			{
+				json bcs = json::array();
+				for (const auto &d : diriclet_bc)
+				{
+					bcs.push_back(json(d));
+				}
+				in_args["problem_params"]["dirichlet_boundary"] = bcs;
+			}
+			const int neumann_bc_size = std::distance(neumann_bc.begin(), neumann_bc.end());
+			if (neumann_bc_size > 0 && !in_args["problem_params"].contains("neumann_boundary"))
+			{
+				json bcs = json::array();
+				for (const auto &d : neumann_bc)
+				{
+					bcs.push_back(json(d));
+				}
+				in_args["problem_params"]["neumann_boundary"] = bcs;
+			}
+			const int pressure_bc_size = std::distance(pressure_bc.begin(), pressure_bc.end());
+			if (pressure_bc_size > 0 && !in_args["problem_params"].contains("pressure_boundary"))
+			{
+				json bcs = json::array();
+				for (const auto &d : pressure_bc)
+				{
+					bcs.push_back(json(d));
+				}
+				in_args["problem_params"]["pressure_boundary"] = bcs;
+			}
+
+			if (!rhs.is_none() && !in_args["problem_params"].contains("rhs"))
+				in_args["problem_params"]["rhs"] = json(rhs);
+
+			json export_json = json(expo);
+
+			if (!in_args.contains("export"))
+				in_args["export"] = export_json;
+
+			state.init(in_args);
+
+			if (is2d)
+				state.mesh = std::make_unique<polyfem::Mesh2D>();
+			else
+				state.mesh = std::make_unique<polyfem::Mesh3D>();
+			state.mesh->build_from_matrices(vertices, cells);
+			state.load_mesh();
+			state.compute_mesh_stats();
+
+			state.build_basis();
+
+			state.assemble_rhs();
+			state.assemble_stiffness_mat();
+			state.solve_problem();
+
+			return res;
+		},
+		"single solve function", py::kw_only(), py::arg("vertices"), py::arg("cells"), py::arg("sidesets_func") = py::none(), py::arg("sidesets_selection") = py::list(), py::arg("body_selection") = py::list(), py::arg("materials") = py::list(), py::arg("pde") = std::string("LinearElasticity"), py::arg("diriclet_bc") = py::list(), py::arg("neumann_bc") = py::list(), py::arg("pressure_bc") = py::list(), py::arg("rhs") = py::none(), py::arg("is_time_dependent") = bool(false), py::arg("export") = py::dict(), py::arg("log_level") = 2);
 }

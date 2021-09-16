@@ -117,6 +117,188 @@ PYBIND11_MODULE(polyfempy, m)
 		self.init(json::parse(json_string));
 	};
 
+	const auto rendering_lambda = [] (const Eigen::MatrixXd &vertices, const Eigen::MatrixXi &faces, int width, int height, const Eigen::MatrixXd &camera_positionm, const double camera_fov, const double camera_near, const double camera_far, const bool is_perspective, const Eigen::MatrixXd &lookatm, const Eigen::MatrixXd &upm, const Eigen::MatrixXd &ambient_lightm, const std::vector<std::pair<Eigen::MatrixXd, Eigen::MatrixXd>> &lights, const Eigen::MatrixXd &diffuse_colorm, const Eigen::MatrixXd &specular_colorm, const double specular_exponent)
+		{
+			using namespace renderer;
+			using namespace Eigen;
+
+			Eigen::Vector3d camera_position(0, 0, 1);
+			Eigen::Vector3d lookat(0, 0, 0);
+			Eigen::Vector3d up(0, 0, 1);
+			Eigen::Vector3d ambient_light(0.1, 0.1, 0.1);
+			Eigen::Vector3d diffuse_color(1, 0, 0);
+			Eigen::Vector3d specular_color(1, 0, 0);
+
+			if (camera_positionm.size() > 0 && camera_positionm.size() != 3)
+				throw pybind11::value_error("camera_position have size 3");
+			if (camera_positionm.size() == 3)
+				camera_position << camera_positionm(0), camera_positionm(1), camera_positionm(2);
+			if (lookatm.size() > 0 && lookatm.size() != 3)
+				throw pybind11::value_error("lookat have size 3");
+			if (lookatm.size() == 3)
+				lookat << lookatm(0), lookatm(1), lookatm(2);
+			if (upm.size() > 0 && upm.size() != 3)
+				throw pybind11::value_error("up have size 3");
+			if (upm.size() == 3)
+				up << upm(0), upm(1), upm(2);
+			if (ambient_lightm.size() > 0 && ambient_lightm.size() != 3)
+				throw pybind11::value_error("ambient_light have size 3");
+			if (ambient_lightm.size() == 3)
+				ambient_light << ambient_lightm(0), ambient_lightm(1), ambient_lightm(2);
+			if (diffuse_colorm.size() > 0 && diffuse_colorm.size() != 3)
+				throw pybind11::value_error("diffuse_color have size 3");
+			if (diffuse_colorm.size() == 3)
+				diffuse_color << diffuse_colorm(0), diffuse_colorm(1), diffuse_colorm(2);
+			if (specular_colorm.size() > 0 && specular_colorm.size() != 3)
+				throw pybind11::value_error("specular_color have size 3");
+			if (specular_colorm.size() == 3)
+				specular_color << specular_colorm(0), specular_colorm(1), specular_colorm(2);
+
+			Material material;
+			material.diffuse_color = diffuse_color;
+			material.specular_color = specular_color;
+			material.specular_exponent = specular_exponent;
+
+			Eigen::Matrix<FrameBufferAttributes, Eigen::Dynamic, Eigen::Dynamic> frameBuffer(width, height);
+			UniformAttributes uniform;
+
+			const Vector3d gaze = lookat - camera_position;
+			const Vector3d w = -gaze.normalized();
+			const Vector3d u = up.cross(w).normalized();
+			const Vector3d v = w.cross(u);
+
+			Matrix4d M_cam_inv;
+			M_cam_inv << u(0), v(0), w(0), camera_position(0),
+				u(1), v(1), w(1), camera_position(1),
+				u(2), v(2), w(2), camera_position(2),
+				0, 0, 0, 1;
+
+			uniform.M_cam = M_cam_inv.inverse();
+
+			{
+				const double camera_ar = double(width) / height;
+				const double tan_angle = tan(camera_fov / 2);
+				const double n = - camera_near;
+				const double f = - camera_far;
+				const double t = tan_angle * n;
+				const double b = -t;
+				const double r = t * camera_ar;
+				const double l = -r;
+
+				uniform.M_orth << 2 / (r - l), 0, 0, -(r + l) / (r - l),
+					0, 2 / (t - b), 0, -(t + b) / (t - b),
+					0, 0, 2 / (n - f), -(n + f) / (n - f),
+					0, 0, 0, 1;
+				Matrix4d P;
+				if (is_perspective)
+				{
+					P << n, 0, 0, 0,
+						0, n, 0, 0,
+						0, 0, n + f, -f * n,
+						0, 0, 1, 0;
+				}
+				else
+				{
+					P << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1;
+				}
+
+				uniform.M = uniform.M_orth * P * uniform.M_cam;
+			}
+
+			Program program;
+			program.VertexShader = [&](const VertexAttributes &va, const UniformAttributes &uniform)
+			{
+				VertexAttributes out;
+				out.position = uniform.M * va.position;
+				Vector3d color = ambient_light;
+
+				Vector3d hit(va.position(0), va.position(1), va.position(2));
+				for (const auto &l : lights)
+				{
+					Vector3d Li = (l.first - hit).normalized();
+					Vector3d N = va.normal;
+					Vector3d diffuse = va.material.diffuse_color * std::max(Li.dot(N), 0.0);
+					Vector3d H;
+					if (is_perspective)
+					{
+						H = (Li + (camera_position - hit).normalized()).normalized();
+					}
+					else
+					{
+						H = (Li - gaze.normalized()).normalized();
+					}
+					const Vector3d specular = va.material.specular_color * std::pow(std::max(N.dot(H), 0.0), va.material.specular_exponent);
+					const Vector3d D = l.first - hit;
+					color += (diffuse + specular).cwiseProduct(l.second) / D.squaredNorm();
+				}
+				out.color = color;
+				return out;
+			};
+
+			program.FragmentShader = [](const VertexAttributes &va, const UniformAttributes &uniform)
+			{
+				FragmentAttributes out(va.color(0), va.color(1), va.color(2));
+				out.depth = -va.position(2);
+				return out;
+			};
+
+			program.BlendingShader = [](const FragmentAttributes &fa, const FrameBufferAttributes &previous)
+			{
+				if (fa.depth < previous.depth)
+				{
+					FrameBufferAttributes out(fa.color[0] * 255, fa.color[1] * 255, fa.color[2] * 255, fa.color[3] * 255);
+					out.depth = fa.depth;
+					return out;
+				}
+				else
+				{
+					return previous;
+				}
+			};
+
+			Eigen::MatrixXd vnormals(vertices.rows(), 3);
+			//    Eigen::MatrixXd areas(tmp.rows(), 1);
+			vnormals.setZero();
+			//    areas.setZero();
+			Eigen::MatrixXd fnormals(faces.rows(), 3);
+
+			for (int i = 0; i < faces.rows(); ++i)
+			{
+				const Vector3d l1 = vertices.row(faces(i, 1)) - vertices.row(faces(i, 0));
+				const Vector3d l2 = vertices.row(faces(i, 2)) - vertices.row(faces(i, 0));
+				const auto nn = l1.cross(l2);
+				const double area = nn.norm();
+				fnormals.row(i) = nn / area;
+
+				for (int j = 0; j < 3; j++)
+				{
+					int vid = faces(i, j);
+					vnormals.row(vid) += nn;
+					//    areas(vid) += area;
+				}
+			}
+
+			std::vector<VertexAttributes> vertex_attributes;
+			for (int i = 0; i < faces.rows(); ++i)
+			{
+				for (int j = 0; j < 3; j++)
+				{
+					int vid = faces(i, j);
+					VertexAttributes va(vertices(vid, 0), vertices(vid, 1), vertices(vid, 2));
+					va.material = material;
+					va.normal = vnormals.row(vid).normalized();
+					vertex_attributes.push_back(va);
+				}
+			}
+
+			rasterize_triangles(program, uniform, vertex_attributes, frameBuffer);
+
+			std::vector<uint8_t> image;
+			framebuffer_to_uint8(frameBuffer, image);
+
+			return image;
+	};
+
 	auto &solver = py::class_<polyfem::State>(m, "Solver")
 					   .def(py::init<>())
 
@@ -675,142 +857,9 @@ PYBIND11_MODULE(polyfempy, m)
 						   },
 						   "updates pressure boundary", py::arg("id"), py::arg("val"), py::arg("interp") = std::string(""))
 					   .def(
-						   "render", [](polyfem::State &self, int width, int height, const Eigen::MatrixXd &camera_positionm, const double camera_fov, const double camera_fl, const bool is_perspective, const Eigen::MatrixXd &leftm, const Eigen::MatrixXd &upm, const Eigen::MatrixXd &ambient_lightm, const std::vector<std::pair<Eigen::MatrixXd, Eigen::MatrixXd>> &lights, const Eigen::MatrixXd &diffuse_colorm, const Eigen::MatrixXd &specular_colorm, const double specular_exponent)
+						   "render", [rendering_lambda](polyfem::State &self, int width, int height, const Eigen::MatrixXd &camera_positionm, const double camera_fov, const double camera_near, const double camera_far, const bool is_perspective, const Eigen::MatrixXd &lookatm, const Eigen::MatrixXd &upm, const Eigen::MatrixXd &ambient_lightm, const std::vector<std::pair<Eigen::MatrixXd, Eigen::MatrixXd>> &lights, const Eigen::MatrixXd &diffuse_colorm, const Eigen::MatrixXd &specular_colorm, const double specular_exponent)
 						   {
-							   using namespace renderer;
 							   using namespace Eigen;
-
-							   Eigen::Vector3d camera_position(0, 0, 0);
-							   Eigen::Vector3d left(1, 0, 0);
-							   Eigen::Vector3d up(0, 1, 0);
-							   Eigen::Vector3d ambient_light(0.1, 0.1, 0.1);
-							   Eigen::Vector3d diffuse_color(1, 0, 0);
-							   Eigen::Vector3d specular_color(1, 0, 0);
-
-							   if (camera_positionm.size() > 0 && camera_positionm.size() != 3)
-								   throw pybind11::value_error("camera_position have size 3");
-							   if (camera_positionm.size() == 3)
-								   camera_position << camera_positionm(0), camera_positionm(1), camera_positionm(2);
-							   if (leftm.size() > 0 && leftm.size() != 3)
-								   throw pybind11::value_error("left have size 3");
-							   if (leftm.size() == 3)
-								   left << leftm(0), leftm(1), leftm(2);
-							   if (upm.size() > 0 && upm.size() != 3)
-								   throw pybind11::value_error("up have size 3");
-							   if (upm.size() == 3)
-								   up << upm(0), upm(1), upm(2);
-							   if (ambient_lightm.size() > 0 && ambient_lightm.size() != 3)
-								   throw pybind11::value_error("ambient_light have size 3");
-							   if (ambient_lightm.size() == 3)
-								   ambient_light << ambient_lightm(0), ambient_lightm(1), ambient_lightm(2);
-							   if (diffuse_colorm.size() > 0 && diffuse_colorm.size() != 3)
-								   throw pybind11::value_error("diffuse_color have size 3");
-							   if (diffuse_colorm.size() == 3)
-								   diffuse_color << diffuse_colorm(0), diffuse_colorm(1), diffuse_colorm(2);
-							   if (specular_colorm.size() > 0 && specular_colorm.size() != 3)
-								   throw pybind11::value_error("specular_color have size 3");
-							   if (specular_colorm.size() == 3)
-								   specular_color << specular_colorm(0), specular_colorm(1), specular_colorm(2);
-
-							   Material material;
-							   material.diffuse_color = diffuse_color;
-							   material.specular_color = specular_color;
-							   material.specular_exponent = specular_exponent;
-
-							   Eigen::Matrix<FrameBufferAttributes, Eigen::Dynamic, Eigen::Dynamic> frameBuffer(width, height);
-							   UniformAttributes uniform;
-
-							   const Vector3d w = -left.normalized();
-							   const Vector3d u = up.cross(w).normalized();
-							   const Vector3d v = w.cross(u);
-
-							   Matrix4d M_cam_inv;
-							   M_cam_inv << u(0), v(0), w(0), camera_position(0),
-								   u(1), v(1), w(1), camera_position(1),
-								   u(2), v(2), w(2), camera_position(2),
-								   0, 0, 0, 1;
-
-							   uniform.M_cam = M_cam_inv.inverse();
-
-							   {
-								   const double camera_ar = double(width) / height;
-								   double t = tan(camera_fov / 2) * camera_fl;
-								   double b = -t;
-								   double r = t * camera_ar;
-								   double l = -r;
-								   double n = -camera_fl;
-								   double f = 5 * n;
-
-								   uniform.M_orth << 2 / (r - l), 0, 0, -(r + l) / (r - l),
-									   0, 2 / (t - b), 0, -(t + b) / (t - b),
-									   0, 0, 2 / (n - f), -(n + f) / (n - f),
-									   0, 0, 0, 1;
-								   Matrix4d P;
-								   if (is_perspective)
-								   {
-									   P << n, 0, 0, 0,
-										   0, n, 0, 0,
-										   0, 0, n + f, -f * n,
-										   0, 0, 1, 0;
-								   }
-								   else
-								   {
-									   P << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1;
-								   }
-
-								   uniform.M = uniform.M_orth * P * uniform.M_cam;
-							   }
-
-							   Program program;
-							   program.VertexShader = [&](const VertexAttributes &va, const UniformAttributes &uniform)
-							   {
-								   VertexAttributes out;
-								   out.position = uniform.M * va.position;
-								   Vector3d color = ambient_light;
-
-								   Vector3d hit(va.position(0), va.position(1), va.position(2));
-								   for (const auto &l : lights)
-								   {
-									   Vector3d Li = (l.first - hit).normalized();
-									   Vector3d N = va.normal;
-									   Vector3d diffuse = va.material.diffuse_color * std::max(Li.dot(N), 0.0);
-									   Vector3d H;
-									   if (is_perspective)
-									   {
-										   H = (Li + (camera_position - hit).normalized()).normalized();
-									   }
-									   else
-									   {
-										   H = (Li - left.normalized()).normalized();
-									   }
-									   const Vector3d specular = va.material.specular_color * std::pow(std::max(N.dot(H), 0.0), va.material.specular_exponent);
-									   const Vector3d D = l.first - hit;
-									   color += (diffuse + specular).cwiseProduct(l.second) / D.squaredNorm();
-								   }
-								   out.color = color;
-								   return out;
-							   };
-
-							   program.FragmentShader = [](const VertexAttributes &va, const UniformAttributes &uniform)
-							   {
-								   FragmentAttributes out(va.color(0), va.color(1), va.color(2));
-								   out.depth = -va.position(2);
-								   return out;
-							   };
-
-							   program.BlendingShader = [](const FragmentAttributes &fa, const FrameBufferAttributes &previous)
-							   {
-								   if (fa.depth < previous.depth)
-								   {
-									   FrameBufferAttributes out(fa.color[0] * 255, fa.color[1] * 255, fa.color[2] * 255, fa.color[3] * 255);
-									   out.depth = fa.depth;
-									   return out;
-								   }
-								   else
-								   {
-									   return previous;
-								   }
-							   };
 
 							   const int problem_dim = self.problem->is_scalar() ? 1 : self.mesh->dimension();
 
@@ -824,49 +873,30 @@ PYBIND11_MODULE(polyfempy, m)
 								   }
 							   }
 
-							   Eigen::MatrixXd vnormals(tmp.rows(), 3);
-							   //    Eigen::MatrixXd areas(tmp.rows(), 1);
-							   vnormals.setZero();
-							   //    areas.setZero();
-							   Eigen::MatrixXd fnormals(self.boundary_triangles.rows(), 3);
-
-							   for (int i = 0; i < self.boundary_triangles.rows(); ++i)
-							   {
-								   const Vector3d l1 = tmp.row(self.boundary_triangles(i, 1)) - tmp.row(self.boundary_triangles(i, 0));
-								   const Vector3d l2 = tmp.row(self.boundary_triangles(i, 2)) - tmp.row(self.boundary_triangles(i, 0));
-								   const auto nn = l1.cross(l2);
-								   const double area = nn.norm();
-								   fnormals.row(i) = nn / area;
-
-								   for (int j = 0; j < 3; j++)
-								   {
-									   int vid = self.boundary_triangles(i, j);
-									   vnormals.row(vid) += nn;
-									   //    areas(vid) += area;
-								   }
-							   }
-
-							   std::vector<VertexAttributes> vertices;
-							   for (int i = 0; i < self.boundary_triangles.rows(); ++i)
-							   {
-								   for (int j = 0; j < 3; j++)
-								   {
-									   int vid = self.boundary_triangles(i, j);
-									   VertexAttributes va(tmp(vid, 0), tmp(vid, 1), tmp(vid, 2));
-									   va.material = material;
-									   va.normal = vnormals.row(vid).normalized();
-									   vertices.push_back(va);
-								   }
-							   }
-
-							   rasterize_triangles(program, uniform, vertices, frameBuffer);
-
-							   std::vector<uint8_t> image;
-							   framebuffer_to_uint8(frameBuffer, image);
-
-							   return image;
+							   return rendering_lambda(tmp, self.boundary_triangles, width, height, camera_positionm, camera_fov, camera_near, camera_far, is_perspective, lookatm, upm, ambient_lightm, lights, diffuse_colorm, specular_colorm, specular_exponent); 
 						   },
-						   "renders the scene", py::kw_only(), py::arg("width"), py::arg("height"), py::arg("camera_position") = Eigen::MatrixXd(), py::arg("camera_fov") = double(75), py::arg("camera_fl") = double(1), py::arg("is_perspective") = bool(true), py::arg("left") = Eigen::MatrixXd(), py::arg("up") = Eigen::MatrixXd(), py::arg("ambient_light") = Eigen::MatrixXd(), py::arg("lights") = std::vector<std::pair<Eigen::MatrixXd, Eigen::MatrixXd>>(), py::arg("diffuse_color") = Eigen::MatrixXd(), py::arg("specular_color") = Eigen::MatrixXd(), py::arg("specular_exponent") = double(1));
+						   "renders the scene", py::kw_only(), py::arg("width"), py::arg("height"), py::arg("camera_position") = Eigen::MatrixXd(), py::arg("camera_fov") = double(0.8), py::arg("camera_near") = double(1), py::arg("camera_far") = double(10), py::arg("is_perspective") = bool(true), py::arg("lookat") = Eigen::MatrixXd(), py::arg("up") = Eigen::MatrixXd(), py::arg("ambient_light") = Eigen::MatrixXd(), py::arg("lights") = std::vector<std::pair<Eigen::MatrixXd, Eigen::MatrixXd>>(), py::arg("diffuse_color") = Eigen::MatrixXd(), py::arg("specular_color") = Eigen::MatrixXd(), py::arg("specular_exponent") = double(1))
+					   .def(
+						   "render_extrinsic", [rendering_lambda](polyfem::State &self, const std::vector<std::pair<Eigen::MatrixXd, Eigen::MatrixXi>> &vertex_face, int width, int height, const Eigen::MatrixXd &camera_positionm, const double camera_fov, const double camera_near, const double camera_far, const bool is_perspective, const Eigen::MatrixXd &lookatm, const Eigen::MatrixXd &upm, const Eigen::MatrixXd &ambient_lightm, const std::vector<std::pair<Eigen::MatrixXd, Eigen::MatrixXd>> &lights, const Eigen::MatrixXd &diffuse_colorm, const Eigen::MatrixXd &specular_colorm, const double specular_exponent) {
+							   int v_count = 0;
+							   int f_count = 0;
+							   for (const auto& vf_pair : vertex_face) {
+								   v_count += vf_pair.first.rows();
+								   f_count += vf_pair.second.rows();
+							   }
+							   Eigen::MatrixXd vertices(v_count, 3);
+							   Eigen::MatrixXi faces(f_count, 3);
+							   v_count = 0;
+							   f_count = 0;
+							   for (const auto& vf_pair : vertex_face) {
+								   vertices.block(v_count, 0, vf_pair.first.rows(), 3) = vf_pair.first;
+								   faces.block(f_count, 0, vf_pair.second.rows(), 3) = (vf_pair.second.array() + v_count).matrix();
+								   v_count += vf_pair.first.rows();
+								   f_count += vf_pair.second.rows();
+							   }
+							   return rendering_lambda(vertices, faces, width, height, camera_positionm, camera_fov, camera_near, camera_far, is_perspective, lookatm, upm, ambient_lightm, lights, diffuse_colorm, specular_colorm, specular_exponent); 
+						   },
+						   "renders the extrinsic scene", py::kw_only(), py::arg("vertex_face") = std::vector<std::pair<Eigen::MatrixXd, Eigen::MatrixXi>>(), py::arg("width"), py::arg("height"), py::arg("camera_position") = Eigen::MatrixXd(), py::arg("camera_fov") = double(0.8), py::arg("camera_near") = double(1), py::arg("camera_far") = double(10), py::arg("is_perspective") = bool(true), py::arg("lookat") = Eigen::MatrixXd(), py::arg("up") = Eigen::MatrixXd(), py::arg("ambient_light") = Eigen::MatrixXd(), py::arg("lights") = std::vector<std::pair<Eigen::MatrixXd, Eigen::MatrixXd>>(), py::arg("diffuse_color") = Eigen::MatrixXd(), py::arg("specular_color") = Eigen::MatrixXd(), py::arg("specular_exponent") = double(1));
 
 	solver.doc() = "Polyfem solver";
 

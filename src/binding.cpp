@@ -4,6 +4,7 @@
 #include <polyfem/MeshUtils.hpp>
 #include <polyfem/GenericProblem.hpp>
 #include <polyfem/StringUtils.hpp>
+#include <polyfem/ALNLProblem.hpp>
 
 #include "raster.hpp"
 
@@ -494,6 +495,7 @@ PYBIND11_MODULE(polyfempy, m)
 							   //    std::cout << s.step_data.rhs_assembler->problem_->is_rhs_zero() << std::endl;
 							   //    std::cout << s.step_data.nl_problem->rhs_assembler.problem_->is_rhs_zero() << std::endl;
 							   json solver_info;
+							   s.step_data.alnl_problem->update_target(t);
 							   s.solve_transient_tensor_non_linear_step(t0, dt, t, solver_info);
 							   return solver_info;
 						   },
@@ -873,7 +875,7 @@ PYBIND11_MODULE(polyfempy, m)
 								   }
 							   }
 
-							   return rendering_lambda(tmp, self.boundary_triangles, width, height, camera_positionm, camera_fov, camera_near, camera_far, is_perspective, lookatm, upm, ambient_lightm, lights, diffuse_colorm, specular_colorm, specular_exponent); 
+							   return rendering_lambda(tmp, self.boundary_triangles, width, height, camera_positionm, camera_fov, camera_near, camera_far, is_perspective, lookatm, upm, ambient_lightm, lights, diffuse_colorm, specular_colorm, specular_exponent);
 						   },
 						   "renders the scene", py::kw_only(), py::arg("width"), py::arg("height"), py::arg("camera_position") = Eigen::MatrixXd(), py::arg("camera_fov") = double(0.8), py::arg("camera_near") = double(1), py::arg("camera_far") = double(10), py::arg("is_perspective") = bool(true), py::arg("lookat") = Eigen::MatrixXd(), py::arg("up") = Eigen::MatrixXd(), py::arg("ambient_light") = Eigen::MatrixXd(), py::arg("lights") = std::vector<std::pair<Eigen::MatrixXd, Eigen::MatrixXd>>(), py::arg("diffuse_color") = Eigen::MatrixXd(), py::arg("specular_color") = Eigen::MatrixXd(), py::arg("specular_exponent") = double(1))
 					   .def(
@@ -894,7 +896,7 @@ PYBIND11_MODULE(polyfempy, m)
 								   v_count += vf_pair.first.rows();
 								   f_count += vf_pair.second.rows();
 							   }
-							   return rendering_lambda(vertices, faces, width, height, camera_positionm, camera_fov, camera_near, camera_far, is_perspective, lookatm, upm, ambient_lightm, lights, diffuse_colorm, specular_colorm, specular_exponent); 
+							   return rendering_lambda(vertices, faces, width, height, camera_positionm, camera_fov, camera_near, camera_far, is_perspective, lookatm, upm, ambient_lightm, lights, diffuse_colorm, specular_colorm, specular_exponent);
 						   },
 						   "renders the extrinsic scene", py::kw_only(), py::arg("vertex_face") = std::vector<std::pair<Eigen::MatrixXd, Eigen::MatrixXi>>(), py::arg("width"), py::arg("height"), py::arg("camera_position") = Eigen::MatrixXd(), py::arg("camera_fov") = double(0.8), py::arg("camera_near") = double(1), py::arg("camera_far") = double(10), py::arg("is_perspective") = bool(true), py::arg("lookat") = Eigen::MatrixXd(), py::arg("up") = Eigen::MatrixXd(), py::arg("ambient_light") = Eigen::MatrixXd(), py::arg("lights") = std::vector<std::pair<Eigen::MatrixXd, Eigen::MatrixXd>>(), py::arg("diffuse_color") = Eigen::MatrixXd(), py::arg("specular_color") = Eigen::MatrixXd(), py::arg("specular_exponent") = double(1));
 

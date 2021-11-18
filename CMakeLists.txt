@@ -1,5 +1,8 @@
 ################################################################################
-cmake_minimum_required(VERSION 3.1)
+# Check required CMake version
+set(REQUIRED_CMAKE_VERSION "3.14.0")
+cmake_minimum_required(VERSION ${REQUIRED_CMAKE_VERSION})
+
 project(polyfempy)
 ################################################################################
 

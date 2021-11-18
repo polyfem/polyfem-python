@@ -27,7 +27,7 @@ endfunction()
 function(polyfem_python_download_polyfem)
     polyfem_python_download_project(polyfem
         GIT_REPOSITORY https://github.com/polyfem/polyfem.git
-        GIT_TAG        75298361e234570cb8fee2df21438ccb6b826a4f
+        GIT_TAG        f1576bcc964875d305cbfb1a1a8030d85d88a0df
     )
 endfunction()
 

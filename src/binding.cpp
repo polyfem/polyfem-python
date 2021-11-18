@@ -519,8 +519,8 @@ PYBIND11_MODULE(polyfempy, m)
 							   {
 								   ids(i) = s.mesh->get_body_id(el_id(i));
 							   }
-
-							   s.interpolate_function(points.rows(), s.sol, fun, boundary_only);
+								const bool use_sampler = true;
+							   s.interpolate_function(points.rows(), s.sol, fun, use_sampler, boundary_only);
 
 							   s.args["export"]["vis_boundary_only"] = tmp;
 
@@ -540,7 +540,8 @@ PYBIND11_MODULE(polyfempy, m)
 							   s.args["export"]["vis_boundary_only"] = boundary_only;
 
 							   s.build_vis_mesh(points, tets, el_id, discr);
-							   s.compute_tensor_value(points.rows(), s.sol, fun, boundary_only);
+							   const bool use_sampler = true;
+							   s.compute_tensor_value(points.rows(), s.sol, fun, use_sampler, boundary_only);
 
 							   s.args["export"]["vis_boundary_only"] = tmp;
 
@@ -560,7 +561,8 @@ PYBIND11_MODULE(polyfempy, m)
 							   s.args["export"]["vis_boundary_only"] = boundary_only;
 
 							   s.build_vis_mesh(points, tets, el_id, discr);
-							   s.compute_scalar_value(points.rows(), s.sol, fun, boundary_only);
+							   	const bool use_sampler = true;
+							   s.compute_scalar_value(points.rows(), s.sol, fun, use_sampler, boundary_only);
 
 							   s.args["export"]["vis_boundary_only"] = tmp;
 
@@ -580,7 +582,8 @@ PYBIND11_MODULE(polyfempy, m)
 							   s.args["export"]["vis_boundary_only"] = boundary_only;
 
 							   s.build_vis_mesh(points, tets, el_id, discr);
-							   s.average_grad_based_function(points.rows(), s.sol, fun, tfun, boundary_only);
+							   const bool use_sampler = true;
+							   s.average_grad_based_function(points.rows(), s.sol, fun, tfun, use_sampler, boundary_only);
 
 							   s.args["export"]["vis_boundary_only"] = tmp;
 

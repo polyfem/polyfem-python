@@ -27,21 +27,27 @@ class PythonicTest(unittest.TestCase):
                 ])
                 index = index + 1
 
-        solution = pf.solve(
+        def sideset(p):
+            if p[0] <= 0.001:
+                return 4
+            return 1
+
+        solver = pf.solve(
             vertices=pts,
             cells=faces,
+            sidesets_func=sideset,
             diriclet_bc=[{"id": 4, "value": [0, 0]}],
-            materials=[{"E": 2100, "nu": 0.3}],
+            materials=[{"id": 0, "E": 2100, "nu": 0.3}],
             rhs=[0, 0.1],
             pde=pf.PDEs.LinearElasticity,
             discr_order=1
         )
 
-        log = solution.get_log()
+        log = solver.get_log()
         print(log["time_solving"])
 
         # Get the solution
-        pts, tris, el_id, bid, fun = solution.get_sampled_solution()
+        pts, tris, el_id, bid, fun = solver.get_sampled_solution()
 
 
 if __name__ == '__main__':

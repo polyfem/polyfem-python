@@ -11,8 +11,7 @@ import os
 
 class InflationTest(unittest.TestCase):
     def test_run(self):
-        root_folder = os.path.join(
-            "..", "3rdparty.nosync" if platform.system() == 'Darwin' else "3rdparty", "data")
+        root_folder = os.path.join("..", "data", "data")
 
         solver = pf.Solver()
 

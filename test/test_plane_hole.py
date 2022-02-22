@@ -13,8 +13,7 @@ class BendingTest(unittest.TestCase):
 
         # def run_one(self, discr_order):
         discr_order = 2
-        root_folder = os.path.join(
-            "..", "3rdparty.nosync" if platform.system() == 'Darwin' else "3rdparty", "data")
+        root_folder = os.path.join("..", "data", "data")
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
         mesh_path = os.path.join(dir_path, root_folder, "plane_hole.obj")

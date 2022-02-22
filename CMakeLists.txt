@@ -1,14 +1,7 @@
 ################################################################################
 # Check required CMake version
 set(REQUIRED_CMAKE_VERSION "3.14.0")
-if(POLYFEM_TOPLEVEL_PROJECT)
-    cmake_minimum_required(VERSION ${REQUIRED_CMAKE_VERSION})
-else()
-    # Don't use cmake_minimum_required here to avoid implicitly overriding parent policies
-    if(${CMAKE_VERSION} VERSION_LESS ${REQUIRED_CMAKE_VERSION})
-        message(FATAL_ERROR "CMake required version to build PolyFEM is ${REQUIRED_CMAKE_VERSION}")
-    endif()
-endif()
+cmake_minimum_required(VERSION ${REQUIRED_CMAKE_VERSION})
 
 if(INPUT_POLYFEMPY_DATA_ROOT)
     set(POLYFEMPY_DATA_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/${INPUT_POLYFEMPY_DATA_ROOT}/")

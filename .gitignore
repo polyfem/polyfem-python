@@ -13,6 +13,7 @@ __pycache__
 *.obj
 *.pyc
 *.vtu
+*.pvd
 *.egg-info
 *.so
 temp-plot.html

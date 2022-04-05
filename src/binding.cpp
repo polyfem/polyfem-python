@@ -462,6 +462,7 @@ PYBIND11_MODULE(polyfempy, m)
 							   //    std::cout << s.step_data.rhs_assembler->problem_->is_rhs_zero() << std::endl;
 							   //    std::cout << s.step_data.nl_problem->rhs_assembler.problem_->is_rhs_zero() << std::endl;
 							   json solver_info;
+							   s.step_data.nl_problem->substepping(t0 + t * dt);
 							   s.step_data.alnl_problem->update_target(t0 + t * dt);
 							   s.solve_transient_tensor_non_linear_step(t0, dt, t, solver_info);
 							   return solver_info; },

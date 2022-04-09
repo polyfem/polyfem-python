@@ -353,7 +353,7 @@ PYBIND11_MODULE(polyfempy, m)
 							   //    py::scoped_ostream_redirect output;
 
 							   if (V.cols() == 2)
-								   s.mesh = std::make_unique<polyfem::Mesh2D>();
+								   s.mesh = std::make_unique<polyfem::CMesh2D>();
 							   else
 								   s.mesh = std::make_unique<polyfem::Mesh3D>();
 							   s.mesh->build_from_matrices(V, F);
@@ -372,7 +372,7 @@ PYBIND11_MODULE(polyfempy, m)
 							   //    py::scoped_ostream_redirect output;
 
 							   if (V.cols() == 2)
-								   s.mesh = std::make_unique<polyfem::Mesh2D>();
+								   s.mesh = std::make_unique<polyfem::CMesh2D>();
 							   else
 								   s.mesh = std::make_unique<polyfem::Mesh3D>();
 							   s.mesh->build_from_matrices(V, F);
@@ -791,6 +791,13 @@ PYBIND11_MODULE(polyfempy, m)
 							   } },
 						   "updates pressure boundary", py::arg("id"), py::arg("val"), py::arg("interp") = std::string(""))
 					   .def(
+						   "update_obstacle_displacement", [](polyfem::State &self, const int oid, const py::object &val, const std::string &interp) {
+							   using namespace polyfem;
+							   // py::scoped_ostream_redirect output;
+							   const json json_val = val;
+							   self.obstacle.change_displacement(oid, json_val, interp); },
+						   "updates obstacle displacement", py::arg("oid"), py::arg("val"), py::arg("interp") = std::string(""))
+					   .def(
 						   "render", [rendering_lambda](polyfem::State &self, int width, int height, const Eigen::MatrixXd &camera_positionm, const double camera_fov, const double camera_near, const double camera_far, const bool is_perspective, const Eigen::MatrixXd &lookatm, const Eigen::MatrixXd &upm, const Eigen::MatrixXd &ambient_lightm, const std::vector<std::pair<Eigen::MatrixXd, Eigen::MatrixXd>> &lights, const Eigen::MatrixXd &diffuse_colorm, const Eigen::MatrixXd &specular_colorm, const double specular_exponent) {
 							   using namespace Eigen;
 
@@ -1073,7 +1080,7 @@ PYBIND11_MODULE(polyfempy, m)
 			if (vertices.size() > 0 && cells.size() > 0)
 			{
 				if (is2d)
-					state.mesh = std::make_unique<polyfem::Mesh2D>();
+					state.mesh = std::make_unique<polyfem::CMesh2D>();
 				else
 					state.mesh = std::make_unique<polyfem::Mesh3D>();
 				state.mesh->build_from_matrices(vertices, cells);

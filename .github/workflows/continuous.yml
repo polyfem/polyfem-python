@@ -52,6 +52,7 @@ jobs:
           echo "CMAKE_GENERATOR=NMake Makefiles" >> $GITHUB_ENV
           echo "CXX=cl.exe" >> $GITHUB_ENV
           echo "CC=cl.exe" >> $GITHUB_ENV
+          echo "USE_CHOLMOD=0" >> $GITHUB_ENV
           conda init powershell
 
       - name: Build (Debug)

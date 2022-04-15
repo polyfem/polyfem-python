@@ -34,7 +34,7 @@ endfunction()
 function(polyfem_python_download_pybind11)
     polyfem_python_download_project(pybind11
         GIT_REPOSITORY https://github.com/pybind/pybind11.git
-        GIT_TAG        f7b499615e14d70ab098a20deb0cdb3889998a1a
+        GIT_TAG        2.9.2
     )
 endfunction()
 

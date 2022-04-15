@@ -40,6 +40,13 @@ class CMakeBuild(build_ext):
             self.build_extension(ext)
 
     def build_extension(self, ext):
+        use_cholmod = os.environ.get( "USE_CHOLMOD", "1" )
+        n_threads_str = os.environ.get( "N_THREADS", "1" )
+        n_threads = int(n_threads_str)
+
+        cholmod_str = "-DPOLYSOLVE_WITH_CHOLMOD=OFF" if use_cholmod == "0" else "-DPOLYSOLVE_WITH_CHOLMOD=ON"
+
+
         extdir = os.path.join(os.path.abspath(os.path.dirname(
             self.get_ext_fullpath(ext.name))), "polyfempy")
 
@@ -49,6 +56,7 @@ class CMakeBuild(build_ext):
                       '-DPYTHON_EXECUTABLE=' + sys.executable,
                       '-DPYTHON_INCLUDE_DIR=' + python_include_directory,
                       '-DPOLYSOLVE_WITH_PARDISO=OFF',
+                      cholmod_str,
                       #   '-DPOLYFEM_THREADING=NONE',
                       '-DPOLYFEM_NO_UI=ON',
                       '-DPOLYFEM_WITH_APPS=OFF',
@@ -69,7 +77,7 @@ class CMakeBuild(build_ext):
                     cmake_args += ['-A', 'x64']
                 # build_args += ['--', '/m']
         else:
-            build_args += ['--', '-j2']
+            build_args += ['--', '-j{}'.format(n_threads)]
 
         env = os.environ.copy()
         env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(

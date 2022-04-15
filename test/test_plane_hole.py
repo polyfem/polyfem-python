@@ -8,17 +8,18 @@ import platform
 
 class BendingTest(unittest.TestCase):
     def test_run(self):
-    #     self.run_one(1)
-    #     self.run_one(2)
+        #     self.run_one(1)
+        #     self.run_one(2)
 
-    # def run_one(self, discr_order):
+        # def run_one(self, discr_order):
         discr_order = 2
-        root_folder = os.path.join("..", "3rdparty.nosync" if platform.system() == 'Darwin' else "3rdparty", "data")
+        root_folder = os.path.join("..", "data", "data")
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
         mesh_path = os.path.join(dir_path, root_folder, "plane_hole.obj")
 
-        settings = pf.Settings(discr_order=discr_order, pde=pf.PDEs.LinearElasticity)
+        settings = pf.Settings(discr_order=discr_order,
+                               pde=pf.PDEs.LinearElasticity)
 
         settings.set_material_params("E", 210000)
         settings.set_material_params("nu", 0.3)
@@ -39,14 +40,13 @@ class BendingTest(unittest.TestCase):
 
         solver.solve()
 
-        pts, tets, disp = solver.get_sampled_solution()
+        pts, tets, el_id, bid, disp = solver.get_sampled_solution()
         vertices = pts + disp
         mises, _ = solver.get_sampled_mises_avg()
 
         solver.compute_errors()
 
         # plot(vertices, tets, mises)
-
 
 
 if __name__ == '__main__':

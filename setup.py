@@ -9,6 +9,8 @@ from distutils.version import LooseVersion
 from setuptools import setup, Extension, find_packages
 from setuptools.command.build_ext import build_ext
 
+from distutils.sysconfig import get_python_inc
+
 
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=''):
@@ -38,15 +40,25 @@ class CMakeBuild(build_ext):
             self.build_extension(ext)
 
     def build_extension(self, ext):
+        use_cholmod = os.environ.get( "USE_CHOLMOD", "1" )
+        n_threads_str = os.environ.get( "N_THREADS", "1" )
+        n_threads = int(n_threads_str)
+
+        cholmod_str = "-DPOLYSOLVE_WITH_CHOLMOD=OFF" if use_cholmod == "0" else "-DPOLYSOLVE_WITH_CHOLMOD=ON"
+
+
         extdir = os.path.join(os.path.abspath(os.path.dirname(
             self.get_ext_fullpath(ext.name))), "polyfempy")
 
+        python_include_directory = str(get_python_inc())
+
         cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
                       '-DPYTHON_EXECUTABLE=' + sys.executable,
+                      '-DPYTHON_INCLUDE_DIR=' + python_include_directory,
                       '-DPOLYSOLVE_WITH_PARDISO=OFF',
+                      cholmod_str,
+                      #   '-DPOLYFEM_THREADING=NONE',
                       '-DPOLYFEM_NO_UI=ON',
-                      '-DPOLYFEM_WITH_APPS=OFF',
-                      '-DPOLYFEM_WITH_MISC=OFF',
                       '-DPOLYSOLVE_WITH_AMGCL=OFF',
                       '-DPOLYSOLVE_WITH_MKL=OFF',
                       '-DPOLYSOLVE_WITH_SPECTRA=OFF']
@@ -63,7 +75,7 @@ class CMakeBuild(build_ext):
                     cmake_args += ['-A', 'x64']
                 # build_args += ['--', '/m']
         else:
-            build_args += ['--', '-j2']
+            build_args += ['--', '-j{}'.format(n_threads)]
 
         env = os.environ.copy()
         env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(
@@ -100,5 +112,14 @@ setup(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License"
     ],
+    python_requires='>=3.6',
+    install_requires=[
+        'numpy',
+        'argparse'],
+    entry_points={
+        'console_scripts': [
+            'polyfem = polyfempy.command:polyfem'
+        ]
+    },
     test_suite="test"
 )

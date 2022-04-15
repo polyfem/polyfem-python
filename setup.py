@@ -59,8 +59,6 @@ class CMakeBuild(build_ext):
                       cholmod_str,
                       #   '-DPOLYFEM_THREADING=NONE',
                       '-DPOLYFEM_NO_UI=ON',
-                      '-DPOLYFEM_WITH_APPS=OFF',
-                      '-DPOLYFEM_WITH_MISC=OFF',
                       '-DPOLYSOLVE_WITH_AMGCL=OFF',
                       '-DPOLYSOLVE_WITH_MKL=OFF',
                       '-DPOLYSOLVE_WITH_SPECTRA=OFF']

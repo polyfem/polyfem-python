@@ -1,12 +1,6 @@
 name: Build
 
-on:
-  push:
-    branches:
-      - master
-  pull_request:
-    branches:
-      - master
+on: [push, pull_request]
 
 jobs:
   Build:
@@ -16,7 +10,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.7, 3.8]
         config: [Debug, Release]
         include:
           - os: ubuntu-latest
@@ -71,7 +65,7 @@ jobs:
 
       # macos segfaults???
       - name: Tests
-        if: matrix.name == 'Linux' || (matrix.config == 'Debug' && runner.os == 'Windows')
+        if: matrix.name == 'Linux' || matrix.name == 'MacOS' || (matrix.config == 'Debug' && runner.os == 'Windows')
         run: |
           python test/test_bending.py
           python test/test_gravity.py

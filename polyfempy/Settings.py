@@ -1,6 +1,7 @@
 import json
+from logging import raiseExceptions
 import polyfempy
-
+import sys
 
 class Settings:
     """Class that encodes the settings of the solver, it models the input json file"""
@@ -38,6 +39,7 @@ class Settings:
         self.pde = pde
 
         self.selection = None
+        raise RuntimeError("Old Version Deprecated. Use version <0.5.2 on conda for the old interface")
 
     def get_problem(self):
         """Get the problem"""
@@ -141,7 +143,9 @@ class Settings:
         tmp["problem"] = self.problem
         tmp.update(self.advanced_options)
 
-        return json.dumps(tmp, sort_keys=True, indent=4)
+        json_str = json.dumps(tmp, sort_keys=True, indent=4)
+
+        return json_str
 
     def serialize(self):
         """stringyfied json description of this class, used to run the solver"""

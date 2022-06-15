@@ -35,10 +35,13 @@ class PythonicTest(unittest.TestCase):
             vertices=pts,
             cells=faces,
             sidesets_func=sideset,
-            diriclet_bc=[{"id": 4, "value": [0, 0]}],
-            materials=[{"id": 0, "E": 2100, "nu": 0.3}],
-            rhs=[0, 0.1],
-            discr_order=1
+            boundary_conditions=dict(
+                dirichlet_boundary=[dict(id=4, value=[0, 0])],
+                rhs=[0, 0.1],
+            ),
+            geometry="",
+            materials=[dict(type="NeoHookean", id=0, E=2100, nu=0.3)],
+            space=dict(discr_order=1),
         )
 
         log = solver.get_log()

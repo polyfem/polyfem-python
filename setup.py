@@ -29,7 +29,7 @@ class CMakeBuild(build_ext):
             raise RuntimeError(
                 "CMake must be installed to build the following extensions: , ".join(e.name for e in self.extensions))
 
-        # self.debug = True
+        self.debug = True
 
         cmake_version = LooseVersion(
             re.search(r'version\s*([\d.]+)', out.decode()).group(1))
@@ -78,7 +78,7 @@ class CMakeBuild(build_ext):
             build_args += ['--', '-j{}'.format(n_threads)]
 
         env = os.environ.copy()
-        env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(
+        env['CXXFLAGS'] = '{} -DVERSION_INFO=\"{}\"'.format(
             env.get('CXXFLAGS', ''), self.distribution.get_version())
 
         if not os.path.exists(self.build_temp):
@@ -98,7 +98,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="polyfempy",
-    version="0.6",
+    version="0.7",
     author="Teseo Schneider",
     author_email="",
     description="Polyfem Python Bindings",

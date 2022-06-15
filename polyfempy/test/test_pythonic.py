@@ -38,7 +38,6 @@ class PythonicTest(unittest.TestCase):
             diriclet_bc=[{"id": 4, "value": [0, 0]}],
             materials=[{"id": 0, "E": 2100, "nu": 0.3}],
             rhs=[0, 0.1],
-            pde=pf.PDEs.LinearElasticity,
             discr_order=1
         )
 

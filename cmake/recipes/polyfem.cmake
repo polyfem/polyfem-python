@@ -11,7 +11,7 @@ include(FetchContent)
 FetchContent_Declare(
     polyfem
     GIT_REPOSITORY https://github.com/polyfem/polyfem.git
-    GIT_TAG ffb1d130e70fc913ec4546c8683d6d22bd58a700
+    GIT_TAG ea0e5cc25f2ffba64ea47225cf106460935cda5f
     GIT_SHALLOW FALSE
 )
 FetchContent_MakeAvailable(polyfem)

@@ -20,9 +20,6 @@ class CMakeExtension(Extension):
 
 class CMakeBuild(build_ext):
     def run(self):
-        if platform.system() == 'Darwin':
-            self.build_temp = self.build_temp.replace("build", "build.nosync")
-
         try:
             out = subprocess.check_output(['cmake', '--version'])
         except OSError:

@@ -342,11 +342,8 @@ PYBIND11_MODULE(polyfempy, m)
 						   "load_mesh_from_settings", [](polyfem::State &s, const bool normalize_mesh, const double vismesh_rel_area, const int n_refs, const double boundary_id_threshold) {
 							   init_globals(s);
 							   //    py::scoped_ostream_redirect output;
-								 throw std::runtime_error("Need to convert JSON");
-							   s.args["normalize_mesh"] = normalize_mesh;
-							   s.args["n_refs"] = n_refs;
-							   s.args["boundary_id_threshold"] = boundary_id_threshold;
-							   s.args["vismesh_rel_area"] = vismesh_rel_area;
+							   s.args["geometry"]["advanced"]["normalize_mesh"] = normalize_mesh;
+							   s.args["output"]["paraview"]["vismesh_rel_area"] = vismesh_rel_area;
 							   s.load_mesh(); },
 						   "Loads a mesh from the 'mesh' field of the json and 'bc_tag' if any bc tags", py::arg("normalize_mesh") = bool(false), py::arg("vismesh_rel_area") = double(0.00001), py::arg("n_refs") = int(0), py::arg("boundary_id_threshold") = double(-1))
 
@@ -354,12 +351,9 @@ PYBIND11_MODULE(polyfempy, m)
 						   "load_mesh_from_path", [](polyfem::State &s, const std::string &path, const bool normalize_mesh, const double vismesh_rel_area, const int n_refs, const double boundary_id_threshold) {
 							   init_globals(s);
 							   //    py::scoped_ostream_redirect output;
-								 throw std::runtime_error("Need to convert JSON");
 							   s.args["mesh"] = path;
-							   s.args["normalize_mesh"] = normalize_mesh;
-							   s.args["n_refs"] = n_refs;
-							   s.args["boundary_id_threshold"] = boundary_id_threshold;
-							   s.args["vismesh_rel_area"] = vismesh_rel_area;
+							   s.args["geometry"]["advanced"]["normalize_mesh"] = normalize_mesh;
+							   s.args["output"]["paraview"]["vismesh_rel_area"] = vismesh_rel_area;
 							   s.load_mesh(); },
 						   "Loads a mesh from the path and 'bc_tag' from the json if any bc tags", py::arg("path"), py::arg("normalize_mesh") = bool(false), py::arg("vismesh_rel_area") = double(0.00001), py::arg("n_refs") = int(0), py::arg("boundary_id_threshold") = double(-1))
 
@@ -367,13 +361,11 @@ PYBIND11_MODULE(polyfempy, m)
 						   "load_mesh_from_path_and_tags", [](polyfem::State &s, const std::string &path, const std::string &bc_tag, const bool normalize_mesh, const double vismesh_rel_area, const int n_refs, const double boundary_id_threshold) {
 							   init_globals(s);
 							   //    py::scoped_ostream_redirect output;
-								 throw std::runtime_error("Need to convert JSON");
 							   s.args["mesh"] = path;
 							   s.args["bc_tag"] = bc_tag;
-							   s.args["normalize_mesh"] = normalize_mesh;
+							   s.args["geometry"]["advanced"]["normalize_mesh"] = normalize_mesh;
 							   s.args["n_refs"] = n_refs;
-							   s.args["boundary_id_threshold"] = boundary_id_threshold;
-							   s.args["vismesh_rel_area"] = vismesh_rel_area;
+							   s.args["output"]["paraview"]["vismesh_rel_area"] = vismesh_rel_area;
 							   s.load_mesh(); },
 						   "Loads a mesh and bc_tags from path", py::arg("path"), py::arg("bc_tag_path"), py::arg("normalize_mesh") = bool(false), py::arg("vismesh_rel_area") = double(0.00001), py::arg("n_refs") = int(0), py::arg("boundary_id_threshold") = double(-1))
 
@@ -388,11 +380,10 @@ PYBIND11_MODULE(polyfempy, m)
 								   s.mesh = std::make_unique<polyfem::mesh::CMesh3D>();
 							   s.mesh->build_from_matrices(V, F);
 
-								 throw std::runtime_error("Need to convert JSON");
-							   s.args["normalize_mesh"] = normalize_mesh;
-							   s.args["n_refs"] = n_refs;
+							   s.args["geometry"]["advanced"]["normalize_mesh"] = normalize_mesh;
+							   s.args["geometry"]["n_refs"] = n_refs;
 							   s.args["boundary_id_threshold"] = boundary_id_threshold;
-							   s.args["vismesh_rel_area"] = vismesh_rel_area;
+							   s.args["output"]["paraview"]["vismesh_rel_area"] = vismesh_rel_area;
 
 							   s.load_mesh(); },
 						   "Loads a mesh from vertices and connectivity", py::arg("vertices"), py::arg("connectivity"), py::arg("normalize_mesh") = bool(false), py::arg("vismesh_rel_area") = double(0.00001), py::arg("n_refs") = int(0), py::arg("boundary_id_threshold") = double(-1))
@@ -408,12 +399,11 @@ PYBIND11_MODULE(polyfempy, m)
 								   s.mesh = std::make_unique<polyfem::mesh::CMesh3D>();
 							   s.mesh->build_from_matrices(V, F);
 							   s.mesh->attach_higher_order_nodes(nodes_pos, nodes_indices);
-								 throw std::runtime_error("Need to convert JSON");
 
-							   s.args["normalize_mesh"] = normalize_mesh;
-							   s.args["n_refs"] = n_refs;
+							   s.args["geometry"]["advanced"]["normalize_mesh"] = normalize_mesh;
+							   s.args["geometry"]["n_refs"] = n_refs;
 							   s.args["boundary_id_threshold"] = boundary_id_threshold;
-							   s.args["vismesh_rel_area"] = vismesh_rel_area;
+							   s.args["output"]["paraview"]["vismesh_rel_area"] = vismesh_rel_area;
 
 							   s.load_mesh(); },
 						   "Loads an high order mesh from vertices, connectivity, nodes, and node indices mapping element to nodes", py::arg("vertices"), py::arg("connectivity"), py::arg("nodes_pos"), py::arg("nodes_indices"), py::arg("normalize_mesh") = bool(false), py::arg("vismesh_rel_area") = double(0.00001), py::arg("n_refs") = int(0), py::arg("boundary_id_threshold") = double(-1))
@@ -441,8 +431,7 @@ PYBIND11_MODULE(polyfempy, m)
 						   "set_rhs_from_path", [](polyfem::State &s, std::string &path) {
 							   init_globals(s);
 							   //    py::scoped_ostream_redirect output;
-								 throw std::runtime_error("Need to convert JSON");
-							   s.args["rhs_path"] = path; },
+								 throw std::runtime_error("No RHS path"); },
 						   "Loads the rhs from a file", py::arg("path"))
 					   .def(
 						   "set_rhs", [](polyfem::State &s, const Eigen::MatrixXd &rhs) {
@@ -898,7 +887,7 @@ PYBIND11_MODULE(polyfempy, m)
           in_args["n_refs"] = n_refs;
           if (!problem_name.empty())
             in_args["problem"] = problem_name;
-          in_args["normalize_mesh"] = !skip_normalization;
+          in_args["geometry"]["advanced"]["normalize_mesh"] = !skip_normalization;
           in_args["project_to_psd"] = project_to_psd;
 
           if (!scalar_formulation.empty())
@@ -927,7 +916,7 @@ PYBIND11_MODULE(polyfempy, m)
             in_args["solver_type"] = solver;
 
           if (vis_mesh_res > 0)
-            in_args["vismesh_rel_area"] = vis_mesh_res;
+            in_args["output"]["paraview"]["vismesh_rel_area"] = vis_mesh_res;
 
           if (export_material_params)
             in_args["export"]["material_params"] = true;
@@ -982,7 +971,7 @@ PYBIND11_MODULE(polyfempy, m)
             in_args.contains("discr_order") ? int(in_args["discr_order"]) : 1;
 
         if (discr_order == 1 && !in_args.contains("vismesh_rel_area"))
-          in_args["vismesh_rel_area"] = 1e10;
+          in_args["output"]["paraview"]["vismesh_rel_area"] = 1e10;
 
         polyfem::State state;
         state.init_logger("", log_level, false);

@@ -342,7 +342,7 @@ PYBIND11_MODULE(polyfempy, m)
 						   "load_mesh_from_settings", [](polyfem::State &s, const bool normalize_mesh, const double vismesh_rel_area, const int n_refs, const double boundary_id_threshold) {
 							   init_globals(s);
 							   //    py::scoped_ostream_redirect output;
-							   s.args["geometry"]["advanced"]["normalize_mesh"] = normalize_mesh;
+							   s.args["geometry"][0]["advanced"]["normalize_mesh"] = normalize_mesh;
 							   s.args["output"]["paraview"]["vismesh_rel_area"] = vismesh_rel_area;
 							   s.load_mesh(); },
 						   "Loads a mesh from the 'mesh' field of the json and 'bc_tag' if any bc tags", py::arg("normalize_mesh") = bool(false), py::arg("vismesh_rel_area") = double(0.00001), py::arg("n_refs") = int(0), py::arg("boundary_id_threshold") = double(-1))
@@ -351,8 +351,8 @@ PYBIND11_MODULE(polyfempy, m)
 						   "load_mesh_from_path", [](polyfem::State &s, const std::string &path, const bool normalize_mesh, const double vismesh_rel_area, const int n_refs, const double boundary_id_threshold) {
 							   init_globals(s);
 							   //    py::scoped_ostream_redirect output;
-							   s.args["mesh"] = path;
-							   s.args["geometry"]["advanced"]["normalize_mesh"] = normalize_mesh;
+							   s.args["geometry"][0]["mesh"] = path;
+							   s.args["geometry"][0]["advanced"]["normalize_mesh"] = normalize_mesh;
 							   s.args["output"]["paraview"]["vismesh_rel_area"] = vismesh_rel_area;
 							   s.load_mesh(); },
 						   "Loads a mesh from the path and 'bc_tag' from the json if any bc tags", py::arg("path"), py::arg("normalize_mesh") = bool(false), py::arg("vismesh_rel_area") = double(0.00001), py::arg("n_refs") = int(0), py::arg("boundary_id_threshold") = double(-1))
@@ -361,9 +361,9 @@ PYBIND11_MODULE(polyfempy, m)
 						   "load_mesh_from_path_and_tags", [](polyfem::State &s, const std::string &path, const std::string &bc_tag, const bool normalize_mesh, const double vismesh_rel_area, const int n_refs, const double boundary_id_threshold) {
 							   init_globals(s);
 							   //    py::scoped_ostream_redirect output;
-							   s.args["mesh"] = path;
+							   s.args["geometry"][0]["mesh"] = path;
 							   s.args["bc_tag"] = bc_tag;
-							   s.args["geometry"]["advanced"]["normalize_mesh"] = normalize_mesh;
+							   s.args["geometry"][0]["advanced"]["normalize_mesh"] = normalize_mesh;
 							   s.args["n_refs"] = n_refs;
 							   s.args["output"]["paraview"]["vismesh_rel_area"] = vismesh_rel_area;
 							   s.load_mesh(); },
@@ -380,8 +380,8 @@ PYBIND11_MODULE(polyfempy, m)
 								   s.mesh = std::make_unique<polyfem::mesh::CMesh3D>();
 							   s.mesh->build_from_matrices(V, F);
 
-							   s.args["geometry"]["advanced"]["normalize_mesh"] = normalize_mesh;
-							   s.args["geometry"]["n_refs"] = n_refs;
+							   s.args["geometry"][0]["advanced"]["normalize_mesh"] = normalize_mesh;
+							   s.args["geometry"][0]["n_refs"] = n_refs;
 							   s.args["boundary_id_threshold"] = boundary_id_threshold;
 							   s.args["output"]["paraview"]["vismesh_rel_area"] = vismesh_rel_area;
 
@@ -400,8 +400,8 @@ PYBIND11_MODULE(polyfempy, m)
 							   s.mesh->build_from_matrices(V, F);
 							   s.mesh->attach_higher_order_nodes(nodes_pos, nodes_indices);
 
-							   s.args["geometry"]["advanced"]["normalize_mesh"] = normalize_mesh;
-							   s.args["geometry"]["n_refs"] = n_refs;
+							   s.args["geometry"][0]["advanced"]["normalize_mesh"] = normalize_mesh;
+							   s.args["geometry"][0]["n_refs"] = n_refs;
 							   s.args["boundary_id_threshold"] = boundary_id_threshold;
 							   s.args["output"]["paraview"]["vismesh_rel_area"] = vismesh_rel_area;
 
@@ -882,12 +882,13 @@ PYBIND11_MODULE(polyfempy, m)
         }
         else
         {
-          in_args["mesh"] = mesh;
+          in_args["geometry"][0]["mesh"] = mesh;
           in_args["force_linear_geometry"] = force_linear_geom;
           in_args["n_refs"] = n_refs;
           if (!problem_name.empty())
             in_args["problem"] = problem_name;
-          in_args["geometry"]["advanced"]["normalize_mesh"] = !skip_normalization;
+          in_args["geometry"][0]["advanced"]["normalize_mesh"] =
+              !skip_normalization;
           in_args["project_to_psd"] = project_to_psd;
 
           if (!scalar_formulation.empty())

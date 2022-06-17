@@ -120,6 +120,3 @@ config = pf(geometry = geometry, materials = [matnu, matE])
 def solve(**kwargs):
     d = generate_input_dict(config)
     polyfempy.solve(**d)
-
-if __name__ == '__main__':
-  

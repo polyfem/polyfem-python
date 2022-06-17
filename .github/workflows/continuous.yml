@@ -68,6 +68,3 @@ jobs:
         if: matrix.name == 'Linux' || matrix.name == 'MacOS' || (matrix.config == 'Debug' && runner.os == 'Windows')
         run: |
           python test/test_bending.py
-          python test/test_gravity.py
-          python test/test_inflation.py
-          python test/test_plane_hole.py

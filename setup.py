@@ -29,7 +29,7 @@ class CMakeBuild(build_ext):
             raise RuntimeError(
                 "CMake must be installed to build the following extensions: , ".join(e.name for e in self.extensions))
 
-        self.debug = True
+        # self.debug = True
 
         cmake_version = LooseVersion(
             re.search(r'version\s*([\d.]+)', out.decode()).group(1))

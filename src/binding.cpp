@@ -16,6 +16,7 @@
 #include <igl/remove_duplicate_vertices.h>
 #include <igl/boundary_facets.h>
 #include <igl/remove_unreferenced.h>
+#include <stdexcept>
 
 #ifdef USE_TBB
 #include <tbb/task_scheduler_init.h>
@@ -341,6 +342,7 @@ PYBIND11_MODULE(polyfempy, m)
 						   "load_mesh_from_settings", [](polyfem::State &s, const bool normalize_mesh, const double vismesh_rel_area, const int n_refs, const double boundary_id_threshold) {
 							   init_globals(s);
 							   //    py::scoped_ostream_redirect output;
+								 throw std::runtime_error("Need to convert JSON");
 							   s.args["normalize_mesh"] = normalize_mesh;
 							   s.args["n_refs"] = n_refs;
 							   s.args["boundary_id_threshold"] = boundary_id_threshold;
@@ -352,6 +354,7 @@ PYBIND11_MODULE(polyfempy, m)
 						   "load_mesh_from_path", [](polyfem::State &s, const std::string &path, const bool normalize_mesh, const double vismesh_rel_area, const int n_refs, const double boundary_id_threshold) {
 							   init_globals(s);
 							   //    py::scoped_ostream_redirect output;
+								 throw std::runtime_error("Need to convert JSON");
 							   s.args["mesh"] = path;
 							   s.args["normalize_mesh"] = normalize_mesh;
 							   s.args["n_refs"] = n_refs;
@@ -364,6 +367,7 @@ PYBIND11_MODULE(polyfempy, m)
 						   "load_mesh_from_path_and_tags", [](polyfem::State &s, const std::string &path, const std::string &bc_tag, const bool normalize_mesh, const double vismesh_rel_area, const int n_refs, const double boundary_id_threshold) {
 							   init_globals(s);
 							   //    py::scoped_ostream_redirect output;
+								 throw std::runtime_error("Need to convert JSON");
 							   s.args["mesh"] = path;
 							   s.args["bc_tag"] = bc_tag;
 							   s.args["normalize_mesh"] = normalize_mesh;
@@ -384,6 +388,7 @@ PYBIND11_MODULE(polyfempy, m)
 								   s.mesh = std::make_unique<polyfem::mesh::CMesh3D>();
 							   s.mesh->build_from_matrices(V, F);
 
+								 throw std::runtime_error("Need to convert JSON");
 							   s.args["normalize_mesh"] = normalize_mesh;
 							   s.args["n_refs"] = n_refs;
 							   s.args["boundary_id_threshold"] = boundary_id_threshold;
@@ -403,6 +408,7 @@ PYBIND11_MODULE(polyfempy, m)
 								   s.mesh = std::make_unique<polyfem::mesh::CMesh3D>();
 							   s.mesh->build_from_matrices(V, F);
 							   s.mesh->attach_higher_order_nodes(nodes_pos, nodes_indices);
+								 throw std::runtime_error("Need to convert JSON");
 
 							   s.args["normalize_mesh"] = normalize_mesh;
 							   s.args["n_refs"] = n_refs;
@@ -435,6 +441,7 @@ PYBIND11_MODULE(polyfempy, m)
 						   "set_rhs_from_path", [](polyfem::State &s, std::string &path) {
 							   init_globals(s);
 							   //    py::scoped_ostream_redirect output;
+								 throw std::runtime_error("Need to convert JSON");
 							   s.args["rhs_path"] = path; },
 						   "Loads the rhs from a file", py::arg("path"))
 					   .def(
@@ -505,10 +512,11 @@ PYBIND11_MODULE(polyfempy, m)
 					   .def(
 						   "export_vtu", [](polyfem::State &s, std::string &path, bool boundary_only) {
 							   //    py::scoped_ostream_redirect output;
-							   const bool tmp = s.args["export"]["vis_boundary_only"];
-							   s.args["export"]["vis_boundary_only"] = boundary_only;
+								auto& vis_bnd = s.args["output"]["advanced"]["vis_boundary_only"];
+							  const bool tmp = vis_bnd; 
+							  vis_bnd = boundary_only;
 							   s.save_vtu(path, 0);
-							   s.args["export"]["vis_boundary_only"] = tmp; },
+								 vis_bnd = tmp;},
 						   "exports the solution as vtu", py::arg("path"), py::arg("boundary_only") = bool(false))
 					   //    .def("export_wire", [](polyfem::State &s, std::string &path, bool isolines) { py::scoped_ostream_redirect output; s.save_wire(path, isolines); }, "exports wireframe of the mesh", py::arg("path"), py::arg("isolines") = false)
 
@@ -554,15 +562,15 @@ PYBIND11_MODULE(polyfempy, m)
 							   Eigen::MatrixXi el_id;
 							   Eigen::MatrixXd discr;
 							   Eigen::MatrixXd fun;
-
-							   const bool tmp = s.args["export"]["vis_boundary_only"];
-							   s.args["export"]["vis_boundary_only"] = boundary_only;
+								auto& vis_bnd = s.args["output"]["advanced"]["vis_boundary_only"];
+							  const bool tmp = vis_bnd; 
+							  vis_bnd = boundary_only;
 
 							   s.build_vis_mesh(points, tets, el_id, discr);
 							   const bool use_sampler = true;
 							   s.compute_tensor_value(points.rows(), s.sol, fun, use_sampler, boundary_only);
 
-							   s.args["export"]["vis_boundary_only"] = tmp;
+								vis_bnd = tmp;
 
 							   return fun; },
 						   "returns the stress tensor on a densly sampled mesh, use 'vismesh_rel_area' to control density", py::arg("boundary_only") = bool(false))
@@ -576,14 +584,15 @@ PYBIND11_MODULE(polyfempy, m)
 							   Eigen::MatrixXd discr;
 							   Eigen::MatrixXd fun;
 
-							   const bool tmp = s.args["export"]["vis_boundary_only"];
-							   s.args["export"]["vis_boundary_only"] = boundary_only;
+								auto& vis_bnd = s.args["output"]["advanced"]["vis_boundary_only"];
+							  const bool tmp = vis_bnd; 
+							  vis_bnd = boundary_only;
 
 							   s.build_vis_mesh(points, tets, el_id, discr);
 							   	const bool use_sampler = true;
 							   s.compute_scalar_value(points.rows(), s.sol, fun, use_sampler, boundary_only);
 
-							   s.args["export"]["vis_boundary_only"] = tmp;
+								vis_bnd = tmp;
 
 							   return fun; },
 						   "returns the von mises stresses on a densly sampled mesh, use 'vismesh_rel_area' to control density", py::arg("boundary_only") = bool(false))
@@ -597,14 +606,15 @@ PYBIND11_MODULE(polyfempy, m)
 							   Eigen::MatrixXd discr;
 							   Eigen::MatrixXd fun, tfun;
 
-							   const bool tmp = s.args["export"]["vis_boundary_only"];
-							   s.args["export"]["vis_boundary_only"] = boundary_only;
+								auto& vis_bnd = s.args["output"]["advanced"]["vis_boundary_only"];
+							  const bool tmp = vis_bnd; 
+							  vis_bnd = boundary_only;
 
 							   s.build_vis_mesh(points, tets, el_id, discr);
 							   const bool use_sampler = true;
 							   s.average_grad_based_function(points.rows(), s.sol, fun, tfun, use_sampler, boundary_only);
 
-							   s.args["export"]["vis_boundary_only"] = tmp;
+								vis_bnd = tmp;
 
 							   return py::make_tuple(fun, tfun); },
 						   "returns the von mises stresses and stress tensor averaged around a vertex on a densly sampled mesh, use 'vismesh_rel_area' to control density", py::arg("boundary_only") = bool(false))
@@ -1011,16 +1021,7 @@ PYBIND11_MODULE(polyfempy, m)
 
         state.init(in_args);
 
-        if (vertices.size() > 0 && cells.size() > 0)
-        {
-          const bool is2d = vertices.cols() == 2;
-          if (is2d)
-            state.mesh = std::make_unique<polyfem::mesh::CMesh2D>();
-          else
-            state.mesh = std::make_unique<polyfem::mesh::CMesh3D>();
-          state.mesh->build_from_matrices(vertices, cells);
-        }
-        state.load_mesh();
+        state.load_mesh(vertices, cells);
 
         [&]() {
           if (!sidesets_func.is_none())

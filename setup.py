@@ -57,7 +57,7 @@ class CMakeBuild(build_ext):
                       #   '-DPOLYFEM_THREADING=NONE',
                       '-DPOLYFEM_NO_UI=ON',
                       '-DPOLYSOLVE_WITH_AMGCL=OFF',
-                      '-DPOLYSOLVE_WITH_MKL=ON',
+                      '-DPOLYSOLVE_WITH_MKL=OFF',
                       '-DPOLYSOLVE_WITH_SPECTRA=OFF']
 
         cfg = 'Debug' if self.debug else 'Release'

@@ -1,11 +1,13 @@
-#include <polyfem/State.hpp>
-#include <polyfem/AssemblerUtils.hpp>
-#include <polyfem/Logger.hpp>
-#include <polyfem/MeshUtils.hpp>
-#include <polyfem/GenericProblem.hpp>
-#include <polyfem/StringUtils.hpp>
-#include <polyfem/ALNLProblem.hpp>
+#include <polyfem/assembler/AssemblerUtils.hpp>
+#include <polyfem/utils/Logger.hpp>
+#include <polyfem/mesh/MeshUtils.hpp>
+#include <polyfem/mesh/mesh3D/CMesh3D.hpp>
+#include <polyfem/assembler/GenericProblem.hpp>
+#include <polyfem/utils/StringUtils.hpp>
 
+#include "polyfem/State.hpp"
+#include "polyfem/solver/ALNLProblem.hpp"
+#include "polyfem/solver/NLProblem.hpp"
 #include "raster.hpp"
 
 #include <geogram/basic/command_line.h>
@@ -14,6 +16,7 @@
 #include <igl/remove_duplicate_vertices.h>
 #include <igl/boundary_facets.h>
 #include <igl/remove_unreferenced.h>
+#include <stdexcept>
 
 #ifdef USE_TBB
 #include <tbb/task_scheduler_init.h>
@@ -48,253 +51,277 @@ class PDEs
 
 namespace
 {
-	void init_globals(polyfem::State &state)
-	{
-		static bool initialized = false;
+  void init_globals(polyfem::State &state)
+  {
+    static bool initialized = false;
 
-		if (!initialized)
-		{
+    if (!initialized)
+    {
 #ifndef WIN32
-			setenv("GEO_NO_SIGNAL_HANDLER", "1", 1);
+      setenv("GEO_NO_SIGNAL_HANDLER", "1", 1);
 #endif
 
-			GEO::initialize();
+      GEO::initialize();
 
 #ifdef USE_TBB
-			const size_t MB = 1024 * 1024;
-			const size_t stack_size = 64 * MB;
-			unsigned int num_threads = std::max(1u, std::thread::hardware_concurrency());
-			tbb::task_scheduler_init scheduler(num_threads, stack_size);
+      const size_t MB = 1024 * 1024;
+      const size_t stack_size = 64 * MB;
+      unsigned int num_threads =
+          std::max(1u, std::thread::hardware_concurrency());
+      tbb::task_scheduler_init scheduler(num_threads, stack_size);
 #endif
 
-			// Import standard command line arguments, and custom ones
-			GEO::CmdLine::import_arg_group("standard");
-			GEO::CmdLine::import_arg_group("pre");
-			GEO::CmdLine::import_arg_group("algo");
+      // Import standard command line arguments, and custom ones
+      GEO::CmdLine::import_arg_group("standard");
+      GEO::CmdLine::import_arg_group("pre");
+      GEO::CmdLine::import_arg_group("algo");
 
-			state.init_logger(std::cout, 2);
+      state.init_logger(std::cout, 2);
 
-			initialized = true;
-		}
-	}
+      initialized = true;
+    }
+  }
 
 } // namespace
 
+const auto rendering_lambda =
+    [](const Eigen::MatrixXd &vertices, const Eigen::MatrixXi &faces, int width,
+       int height, const Eigen::MatrixXd &camera_positionm,
+       const double camera_fov, const double camera_near,
+       const double camera_far, const bool is_perspective,
+       const Eigen::MatrixXd &lookatm, const Eigen::MatrixXd &upm,
+       const Eigen::MatrixXd &ambient_lightm,
+       const std::vector<std::pair<Eigen::MatrixXd, Eigen::MatrixXd>> &lights,
+       const Eigen::MatrixXd &diffuse_colorm,
+       const Eigen::MatrixXd &specular_colorm, const double specular_exponent) {
+      using namespace renderer;
+      using namespace Eigen;
+
+      Eigen::Vector3d camera_position(0, 0, 1);
+      Eigen::Vector3d lookat(0, 0, 0);
+      Eigen::Vector3d up(0, 0, 1);
+      Eigen::Vector3d ambient_light(0.1, 0.1, 0.1);
+      Eigen::Vector3d diffuse_color(1, 0, 0);
+      Eigen::Vector3d specular_color(1, 0, 0);
+
+      if (camera_positionm.size() > 0 && camera_positionm.size() != 3)
+        throw pybind11::value_error("camera_position have size 3");
+      if (camera_positionm.size() == 3)
+        camera_position << camera_positionm(0), camera_positionm(1),
+            camera_positionm(2);
+      if (lookatm.size() > 0 && lookatm.size() != 3)
+        throw pybind11::value_error("lookat have size 3");
+      if (lookatm.size() == 3)
+        lookat << lookatm(0), lookatm(1), lookatm(2);
+      if (upm.size() > 0 && upm.size() != 3)
+        throw pybind11::value_error("up have size 3");
+      if (upm.size() == 3)
+        up << upm(0), upm(1), upm(2);
+      if (ambient_lightm.size() > 0 && ambient_lightm.size() != 3)
+        throw pybind11::value_error("ambient_light have size 3");
+      if (ambient_lightm.size() == 3)
+        ambient_light << ambient_lightm(0), ambient_lightm(1),
+            ambient_lightm(2);
+      if (diffuse_colorm.size() > 0 && diffuse_colorm.size() != 3)
+        throw pybind11::value_error("diffuse_color have size 3");
+      if (diffuse_colorm.size() == 3)
+        diffuse_color << diffuse_colorm(0), diffuse_colorm(1),
+            diffuse_colorm(2);
+      if (specular_colorm.size() > 0 && specular_colorm.size() != 3)
+        throw pybind11::value_error("specular_color have size 3");
+      if (specular_colorm.size() == 3)
+        specular_color << specular_colorm(0), specular_colorm(1),
+            specular_colorm(2);
+
+      Material material;
+      material.diffuse_color = diffuse_color;
+      material.specular_color = specular_color;
+      material.specular_exponent = specular_exponent;
+
+      Eigen::Matrix<FrameBufferAttributes, Eigen::Dynamic, Eigen::Dynamic>
+          frameBuffer(width, height);
+      UniformAttributes uniform;
+
+      const Vector3d gaze = lookat - camera_position;
+      const Vector3d w = -gaze.normalized();
+      const Vector3d u = up.cross(w).normalized();
+      const Vector3d v = w.cross(u);
+
+      Matrix4d M_cam_inv;
+      M_cam_inv << u(0), v(0), w(0), camera_position(0), u(1), v(1), w(1),
+          camera_position(1), u(2), v(2), w(2), camera_position(2), 0, 0, 0, 1;
+
+      uniform.M_cam = M_cam_inv.inverse();
+
+      {
+        const double camera_ar = double(width) / height;
+        const double tan_angle = tan(camera_fov / 2);
+        const double n = -camera_near;
+        const double f = -camera_far;
+        const double t = tan_angle * n;
+        const double b = -t;
+        const double r = t * camera_ar;
+        const double l = -r;
+
+        uniform.M_orth << 2 / (r - l), 0, 0, -(r + l) / (r - l), 0, 2 / (t - b),
+            0, -(t + b) / (t - b), 0, 0, 2 / (n - f), -(n + f) / (n - f), 0, 0,
+            0, 1;
+        Matrix4d P;
+        if (is_perspective)
+        {
+          P << n, 0, 0, 0, 0, n, 0, 0, 0, 0, n + f, -f * n, 0, 0, 1, 0;
+        }
+        else
+        {
+          P << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1;
+        }
+
+        uniform.M = uniform.M_orth * P * uniform.M_cam;
+      }
+
+      Program program;
+      program.VertexShader = [&](const VertexAttributes &va,
+                                 const UniformAttributes &uniform) {
+        VertexAttributes out;
+        out.position = uniform.M * va.position;
+        Vector3d color = ambient_light;
+
+        Vector3d hit(va.position(0), va.position(1), va.position(2));
+        for (const auto &l : lights)
+        {
+          Vector3d Li = (l.first - hit).normalized();
+          Vector3d N = va.normal;
+          Vector3d diffuse =
+              va.material.diffuse_color * std::max(Li.dot(N), 0.0);
+          Vector3d H;
+          if (is_perspective)
+          {
+            H = (Li + (camera_position - hit).normalized()).normalized();
+          }
+          else
+          {
+            H = (Li - gaze.normalized()).normalized();
+          }
+          const Vector3d specular = va.material.specular_color
+                                    * std::pow(std::max(N.dot(H), 0.0),
+                                               va.material.specular_exponent);
+          const Vector3d D = l.first - hit;
+          color +=
+              (diffuse + specular).cwiseProduct(l.second) / D.squaredNorm();
+        }
+        out.color = color;
+        return out;
+      };
+
+      program.FragmentShader = [](const VertexAttributes &va,
+                                  const UniformAttributes &uniform) {
+        FragmentAttributes out(va.color(0), va.color(1), va.color(2));
+        out.depth = -va.position(2);
+        return out;
+      };
+
+      program.BlendingShader = [](const FragmentAttributes &fa,
+                                  const FrameBufferAttributes &previous) {
+        if (fa.depth < previous.depth)
+        {
+          FrameBufferAttributes out(fa.color[0] * 255, fa.color[1] * 255,
+                                    fa.color[2] * 255, fa.color[3] * 255);
+          out.depth = fa.depth;
+          return out;
+        }
+        else
+        {
+          return previous;
+        }
+      };
+
+      Eigen::MatrixXd vnormals(vertices.rows(), 3);
+      //    Eigen::MatrixXd areas(tmp.rows(), 1);
+      vnormals.setZero();
+      //    areas.setZero();
+      Eigen::MatrixXd fnormals(faces.rows(), 3);
+
+      for (int i = 0; i < faces.rows(); ++i)
+      {
+        const Vector3d l1 =
+            vertices.row(faces(i, 1)) - vertices.row(faces(i, 0));
+        const Vector3d l2 =
+            vertices.row(faces(i, 2)) - vertices.row(faces(i, 0));
+        const auto nn = l1.cross(l2);
+        const double area = nn.norm();
+        fnormals.row(i) = nn / area;
+
+        for (int j = 0; j < 3; j++)
+        {
+          int vid = faces(i, j);
+          vnormals.row(vid) += nn;
+          //    areas(vid) += area;
+        }
+      }
+
+      std::vector<VertexAttributes> vertex_attributes;
+      for (int i = 0; i < faces.rows(); ++i)
+      {
+        for (int j = 0; j < 3; j++)
+        {
+          int vid = faces(i, j);
+          VertexAttributes va(vertices(vid, 0), vertices(vid, 1),
+                              vertices(vid, 2));
+          va.material = material;
+          va.normal = vnormals.row(vid).normalized();
+          vertex_attributes.push_back(va);
+        }
+      }
+
+      rasterize_triangles(program, uniform, vertex_attributes, frameBuffer);
+
+      std::vector<uint8_t> image;
+      framebuffer_to_uint8(frameBuffer, image);
+
+      return image;
+    };
+
 PYBIND11_MODULE(polyfempy, m)
 {
-	const auto &pdes = py::class_<PDEs>(m, "PDEs");
+  const auto &pdes = py::class_<PDEs>(m, "PDEs");
 
-	const auto &sa = py::class_<ScalarAssemblers>(m, "ScalarFormulations");
-	for (auto &a : polyfem::AssemblerUtils::scalar_assemblers())
-	{
-		sa.attr(a.c_str()) = a;
-		pdes.attr(a.c_str()) = a;
-	}
+  const auto &sa = py::class_<ScalarAssemblers>(m, "ScalarFormulations");
+  for (auto &a : polyfem::assembler::AssemblerUtils::scalar_assemblers())
+  {
+    sa.attr(a.c_str()) = a;
+    pdes.attr(a.c_str()) = a;
+  }
 
-	const auto &ta = py::class_<TensorAssemblers>(m, "TensorFormulations");
-	for (auto &a : polyfem::AssemblerUtils::tensor_assemblers())
-	{
-		ta.attr(a.c_str()) = a;
-		pdes.attr(a.c_str()) = a;
-	}
+  const auto &ta = py::class_<TensorAssemblers>(m, "TensorFormulations");
+  for (auto &a : polyfem::assembler::AssemblerUtils::tensor_assemblers())
+  {
+    ta.attr(a.c_str()) = a;
+    pdes.attr(a.c_str()) = a;
+  }
 
-	ta.attr("NonLinearElasticity") = "NonLinearElasticity";
-	pdes.attr("NonLinearElasticity") = "NonLinearElasticity";
+  ta.attr("NonLinearElasticity") = "NonLinearElasticity";
+  pdes.attr("NonLinearElasticity") = "NonLinearElasticity";
 
-	pdes.doc() = "List of supported partial differential equations";
+  pdes.doc() = "List of supported partial differential equations";
 
-	m.def(
-		"is_tensor", [](const std::string &pde) { return polyfem::AssemblerUtils::is_tensor(pde); },
-		"returns true if the pde is tensorial", py::arg("pde"));
+  m.def(
+      "is_tensor",
+      [](const std::string &pde) {
+        return polyfem::assembler::AssemblerUtils::is_tensor(pde);
+      },
+      "returns true if the pde is tensorial", py::arg("pde"));
 
-	const auto setting_lambda = [](polyfem::State &self, const py::object &settings) {
-		using namespace polyfem;
+  const auto setting_lambda = [](polyfem::State &self,
+                                 const py::object &settings) {
+    using namespace polyfem;
 
-		init_globals(self);
-		// py::scoped_ostream_redirect output;
-		const std::string json_string = py::str(settings);
-		self.init(json::parse(json_string));
-	};
+    init_globals(self);
+    // py::scoped_ostream_redirect output;
+    const std::string json_string = py::str(settings);
+    self.init(json::parse(json_string));
+  };
 
-	const auto rendering_lambda = [](const Eigen::MatrixXd &vertices, const Eigen::MatrixXi &faces, int width, int height, const Eigen::MatrixXd &camera_positionm, const double camera_fov, const double camera_near, const double camera_far, const bool is_perspective, const Eigen::MatrixXd &lookatm, const Eigen::MatrixXd &upm, const Eigen::MatrixXd &ambient_lightm, const std::vector<std::pair<Eigen::MatrixXd, Eigen::MatrixXd>> &lights, const Eigen::MatrixXd &diffuse_colorm, const Eigen::MatrixXd &specular_colorm, const double specular_exponent) {
-		using namespace renderer;
-		using namespace Eigen;
-
-		Eigen::Vector3d camera_position(0, 0, 1);
-		Eigen::Vector3d lookat(0, 0, 0);
-		Eigen::Vector3d up(0, 0, 1);
-		Eigen::Vector3d ambient_light(0.1, 0.1, 0.1);
-		Eigen::Vector3d diffuse_color(1, 0, 0);
-		Eigen::Vector3d specular_color(1, 0, 0);
-
-		if (camera_positionm.size() > 0 && camera_positionm.size() != 3)
-			throw pybind11::value_error("camera_position have size 3");
-		if (camera_positionm.size() == 3)
-			camera_position << camera_positionm(0), camera_positionm(1), camera_positionm(2);
-		if (lookatm.size() > 0 && lookatm.size() != 3)
-			throw pybind11::value_error("lookat have size 3");
-		if (lookatm.size() == 3)
-			lookat << lookatm(0), lookatm(1), lookatm(2);
-		if (upm.size() > 0 && upm.size() != 3)
-			throw pybind11::value_error("up have size 3");
-		if (upm.size() == 3)
-			up << upm(0), upm(1), upm(2);
-		if (ambient_lightm.size() > 0 && ambient_lightm.size() != 3)
-			throw pybind11::value_error("ambient_light have size 3");
-		if (ambient_lightm.size() == 3)
-			ambient_light << ambient_lightm(0), ambient_lightm(1), ambient_lightm(2);
-		if (diffuse_colorm.size() > 0 && diffuse_colorm.size() != 3)
-			throw pybind11::value_error("diffuse_color have size 3");
-		if (diffuse_colorm.size() == 3)
-			diffuse_color << diffuse_colorm(0), diffuse_colorm(1), diffuse_colorm(2);
-		if (specular_colorm.size() > 0 && specular_colorm.size() != 3)
-			throw pybind11::value_error("specular_color have size 3");
-		if (specular_colorm.size() == 3)
-			specular_color << specular_colorm(0), specular_colorm(1), specular_colorm(2);
-
-		Material material;
-		material.diffuse_color = diffuse_color;
-		material.specular_color = specular_color;
-		material.specular_exponent = specular_exponent;
-
-		Eigen::Matrix<FrameBufferAttributes, Eigen::Dynamic, Eigen::Dynamic> frameBuffer(width, height);
-		UniformAttributes uniform;
-
-		const Vector3d gaze = lookat - camera_position;
-		const Vector3d w = -gaze.normalized();
-		const Vector3d u = up.cross(w).normalized();
-		const Vector3d v = w.cross(u);
-
-		Matrix4d M_cam_inv;
-		M_cam_inv << u(0), v(0), w(0), camera_position(0),
-			u(1), v(1), w(1), camera_position(1),
-			u(2), v(2), w(2), camera_position(2),
-			0, 0, 0, 1;
-
-		uniform.M_cam = M_cam_inv.inverse();
-
-		{
-			const double camera_ar = double(width) / height;
-			const double tan_angle = tan(camera_fov / 2);
-			const double n = -camera_near;
-			const double f = -camera_far;
-			const double t = tan_angle * n;
-			const double b = -t;
-			const double r = t * camera_ar;
-			const double l = -r;
-
-			uniform.M_orth << 2 / (r - l), 0, 0, -(r + l) / (r - l),
-				0, 2 / (t - b), 0, -(t + b) / (t - b),
-				0, 0, 2 / (n - f), -(n + f) / (n - f),
-				0, 0, 0, 1;
-			Matrix4d P;
-			if (is_perspective)
-			{
-				P << n, 0, 0, 0,
-					0, n, 0, 0,
-					0, 0, n + f, -f * n,
-					0, 0, 1, 0;
-			}
-			else
-			{
-				P << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1;
-			}
-
-			uniform.M = uniform.M_orth * P * uniform.M_cam;
-		}
-
-		Program program;
-		program.VertexShader = [&](const VertexAttributes &va, const UniformAttributes &uniform) {
-			VertexAttributes out;
-			out.position = uniform.M * va.position;
-			Vector3d color = ambient_light;
-
-			Vector3d hit(va.position(0), va.position(1), va.position(2));
-			for (const auto &l : lights)
-			{
-				Vector3d Li = (l.first - hit).normalized();
-				Vector3d N = va.normal;
-				Vector3d diffuse = va.material.diffuse_color * std::max(Li.dot(N), 0.0);
-				Vector3d H;
-				if (is_perspective)
-				{
-					H = (Li + (camera_position - hit).normalized()).normalized();
-				}
-				else
-				{
-					H = (Li - gaze.normalized()).normalized();
-				}
-				const Vector3d specular = va.material.specular_color * std::pow(std::max(N.dot(H), 0.0), va.material.specular_exponent);
-				const Vector3d D = l.first - hit;
-				color += (diffuse + specular).cwiseProduct(l.second) / D.squaredNorm();
-			}
-			out.color = color;
-			return out;
-		};
-
-		program.FragmentShader = [](const VertexAttributes &va, const UniformAttributes &uniform) {
-			FragmentAttributes out(va.color(0), va.color(1), va.color(2));
-			out.depth = -va.position(2);
-			return out;
-		};
-
-		program.BlendingShader = [](const FragmentAttributes &fa, const FrameBufferAttributes &previous) {
-			if (fa.depth < previous.depth)
-			{
-				FrameBufferAttributes out(fa.color[0] * 255, fa.color[1] * 255, fa.color[2] * 255, fa.color[3] * 255);
-				out.depth = fa.depth;
-				return out;
-			}
-			else
-			{
-				return previous;
-			}
-		};
-
-		Eigen::MatrixXd vnormals(vertices.rows(), 3);
-		//    Eigen::MatrixXd areas(tmp.rows(), 1);
-		vnormals.setZero();
-		//    areas.setZero();
-		Eigen::MatrixXd fnormals(faces.rows(), 3);
-
-		for (int i = 0; i < faces.rows(); ++i)
-		{
-			const Vector3d l1 = vertices.row(faces(i, 1)) - vertices.row(faces(i, 0));
-			const Vector3d l2 = vertices.row(faces(i, 2)) - vertices.row(faces(i, 0));
-			const auto nn = l1.cross(l2);
-			const double area = nn.norm();
-			fnormals.row(i) = nn / area;
-
-			for (int j = 0; j < 3; j++)
-			{
-				int vid = faces(i, j);
-				vnormals.row(vid) += nn;
-				//    areas(vid) += area;
-			}
-		}
-
-		std::vector<VertexAttributes> vertex_attributes;
-		for (int i = 0; i < faces.rows(); ++i)
-		{
-			for (int j = 0; j < 3; j++)
-			{
-				int vid = faces(i, j);
-				VertexAttributes va(vertices(vid, 0), vertices(vid, 1), vertices(vid, 2));
-				va.material = material;
-				va.normal = vnormals.row(vid).normalized();
-				vertex_attributes.push_back(va);
-			}
-		}
-
-		rasterize_triangles(program, uniform, vertex_attributes, frameBuffer);
-
-		std::vector<uint8_t> image;
-		framebuffer_to_uint8(frameBuffer, image);
-
-		return image;
-	};
-
-	auto &solver = py::class_<polyfem::State>(m, "Solver")
+  auto &solver = py::class_<polyfem::State>(m, "Solver")
 					   .def(py::init<>())
 
 					   .def("settings", setting_lambda,
@@ -315,10 +342,8 @@ PYBIND11_MODULE(polyfempy, m)
 						   "load_mesh_from_settings", [](polyfem::State &s, const bool normalize_mesh, const double vismesh_rel_area, const int n_refs, const double boundary_id_threshold) {
 							   init_globals(s);
 							   //    py::scoped_ostream_redirect output;
-							   s.args["normalize_mesh"] = normalize_mesh;
-							   s.args["n_refs"] = n_refs;
-							   s.args["boundary_id_threshold"] = boundary_id_threshold;
-							   s.args["vismesh_rel_area"] = vismesh_rel_area;
+							   s.args["geometry"][0]["advanced"]["normalize_mesh"] = normalize_mesh;
+							   s.args["output"]["paraview"]["vismesh_rel_area"] = vismesh_rel_area;
 							   s.load_mesh(); },
 						   "Loads a mesh from the 'mesh' field of the json and 'bc_tag' if any bc tags", py::arg("normalize_mesh") = bool(false), py::arg("vismesh_rel_area") = double(0.00001), py::arg("n_refs") = int(0), py::arg("boundary_id_threshold") = double(-1))
 
@@ -326,11 +351,9 @@ PYBIND11_MODULE(polyfempy, m)
 						   "load_mesh_from_path", [](polyfem::State &s, const std::string &path, const bool normalize_mesh, const double vismesh_rel_area, const int n_refs, const double boundary_id_threshold) {
 							   init_globals(s);
 							   //    py::scoped_ostream_redirect output;
-							   s.args["mesh"] = path;
-							   s.args["normalize_mesh"] = normalize_mesh;
-							   s.args["n_refs"] = n_refs;
-							   s.args["boundary_id_threshold"] = boundary_id_threshold;
-							   s.args["vismesh_rel_area"] = vismesh_rel_area;
+							   s.args["geometry"][0]["mesh"] = path;
+							   s.args["geometry"][0]["advanced"]["normalize_mesh"] = normalize_mesh;
+							   s.args["output"]["paraview"]["vismesh_rel_area"] = vismesh_rel_area;
 							   s.load_mesh(); },
 						   "Loads a mesh from the path and 'bc_tag' from the json if any bc tags", py::arg("path"), py::arg("normalize_mesh") = bool(false), py::arg("vismesh_rel_area") = double(0.00001), py::arg("n_refs") = int(0), py::arg("boundary_id_threshold") = double(-1))
 
@@ -338,12 +361,11 @@ PYBIND11_MODULE(polyfempy, m)
 						   "load_mesh_from_path_and_tags", [](polyfem::State &s, const std::string &path, const std::string &bc_tag, const bool normalize_mesh, const double vismesh_rel_area, const int n_refs, const double boundary_id_threshold) {
 							   init_globals(s);
 							   //    py::scoped_ostream_redirect output;
-							   s.args["mesh"] = path;
+							   s.args["geometry"][0]["mesh"] = path;
 							   s.args["bc_tag"] = bc_tag;
-							   s.args["normalize_mesh"] = normalize_mesh;
+							   s.args["geometry"][0]["advanced"]["normalize_mesh"] = normalize_mesh;
 							   s.args["n_refs"] = n_refs;
-							   s.args["boundary_id_threshold"] = boundary_id_threshold;
-							   s.args["vismesh_rel_area"] = vismesh_rel_area;
+							   s.args["output"]["paraview"]["vismesh_rel_area"] = vismesh_rel_area;
 							   s.load_mesh(); },
 						   "Loads a mesh and bc_tags from path", py::arg("path"), py::arg("bc_tag_path"), py::arg("normalize_mesh") = bool(false), py::arg("vismesh_rel_area") = double(0.00001), py::arg("n_refs") = int(0), py::arg("boundary_id_threshold") = double(-1))
 
@@ -353,15 +375,15 @@ PYBIND11_MODULE(polyfempy, m)
 							   //    py::scoped_ostream_redirect output;
 
 							   if (V.cols() == 2)
-								   s.mesh = std::make_unique<polyfem::CMesh2D>();
+								   s.mesh = std::make_unique<polyfem::mesh::CMesh2D>();
 							   else
-								   s.mesh = std::make_unique<polyfem::Mesh3D>();
+								   s.mesh = std::make_unique<polyfem::mesh::CMesh3D>();
 							   s.mesh->build_from_matrices(V, F);
 
-							   s.args["normalize_mesh"] = normalize_mesh;
-							   s.args["n_refs"] = n_refs;
+							   s.args["geometry"][0]["advanced"]["normalize_mesh"] = normalize_mesh;
+							   s.args["geometry"][0]["n_refs"] = n_refs;
 							   s.args["boundary_id_threshold"] = boundary_id_threshold;
-							   s.args["vismesh_rel_area"] = vismesh_rel_area;
+							   s.args["output"]["paraview"]["vismesh_rel_area"] = vismesh_rel_area;
 
 							   s.load_mesh(); },
 						   "Loads a mesh from vertices and connectivity", py::arg("vertices"), py::arg("connectivity"), py::arg("normalize_mesh") = bool(false), py::arg("vismesh_rel_area") = double(0.00001), py::arg("n_refs") = int(0), py::arg("boundary_id_threshold") = double(-1))
@@ -372,16 +394,16 @@ PYBIND11_MODULE(polyfempy, m)
 							   //    py::scoped_ostream_redirect output;
 
 							   if (V.cols() == 2)
-								   s.mesh = std::make_unique<polyfem::CMesh2D>();
+								   s.mesh = std::make_unique<polyfem::mesh::CMesh2D>();
 							   else
-								   s.mesh = std::make_unique<polyfem::Mesh3D>();
+								   s.mesh = std::make_unique<polyfem::mesh::CMesh3D>();
 							   s.mesh->build_from_matrices(V, F);
 							   s.mesh->attach_higher_order_nodes(nodes_pos, nodes_indices);
 
-							   s.args["normalize_mesh"] = normalize_mesh;
-							   s.args["n_refs"] = n_refs;
+							   s.args["geometry"][0]["advanced"]["normalize_mesh"] = normalize_mesh;
+							   s.args["geometry"][0]["n_refs"] = n_refs;
 							   s.args["boundary_id_threshold"] = boundary_id_threshold;
-							   s.args["vismesh_rel_area"] = vismesh_rel_area;
+							   s.args["output"]["paraview"]["vismesh_rel_area"] = vismesh_rel_area;
 
 							   s.load_mesh(); },
 						   "Loads an high order mesh from vertices, connectivity, nodes, and node indices mapping element to nodes", py::arg("vertices"), py::arg("connectivity"), py::arg("nodes_pos"), py::arg("nodes_indices"), py::arg("normalize_mesh") = bool(false), py::arg("vismesh_rel_area") = double(0.00001), py::arg("n_refs") = int(0), py::arg("boundary_id_threshold") = double(-1))
@@ -409,7 +431,7 @@ PYBIND11_MODULE(polyfempy, m)
 						   "set_rhs_from_path", [](polyfem::State &s, std::string &path) {
 							   init_globals(s);
 							   //    py::scoped_ostream_redirect output;
-							   s.args["rhs_path"] = path; },
+								 throw std::runtime_error("No RHS path"); },
 						   "Loads the rhs from a file", py::arg("path"))
 					   .def(
 						   "set_rhs", [](polyfem::State &s, const Eigen::MatrixXd &rhs) {
@@ -437,7 +459,6 @@ PYBIND11_MODULE(polyfempy, m)
 					   .def(
 						   "init_timestepping", [](polyfem::State &s, const double t0, const double dt) {
 							   init_globals(s);
-							   //    py::scoped_ostream_redirect output;
 							   s.compute_mesh_stats();
 
 							   s.build_basis();
@@ -448,19 +469,11 @@ PYBIND11_MODULE(polyfempy, m)
 							   s.solution_frames.clear();
 							   Eigen::VectorXd _;
 							   s.init_transient(_);
-							   const polyfem::RhsAssembler &rhs_assembler = *s.step_data.rhs_assembler;
+							   const polyfem::assembler::RhsAssembler &rhs_assembler = *s.step_data.rhs_assembler;
 							   s.solve_transient_tensor_non_linear_init(t0, dt, rhs_assembler); },
 						   "initialize timestepping", py::arg("t0"), py::arg("dt"))
 					   .def(
 						   "step_in_time", [](polyfem::State &s, const double t0, const double dt, const int t) {
-							   //    std::cout << s.step_data.rhs_assembler->problem_ << std::endl;
-							   //    std::cout << &s.step_data.nl_problem->rhs_assembler.problem_ << std::endl;
-
-							   //    std::cout << &s.step_data.nl_problem->rhs_assembler << std::endl;
-							   //    std::cout << s.step_data.rhs_assembler << std::endl;
-
-							   //    std::cout << s.step_data.rhs_assembler->problem_->is_rhs_zero() << std::endl;
-							   //    std::cout << s.step_data.nl_problem->rhs_assembler.problem_->is_rhs_zero() << std::endl;
 							   json solver_info;
 							   s.step_data.nl_problem->substepping(t0 + t * dt);
 							   s.step_data.alnl_problem->update_target(t0 + t * dt);
@@ -488,10 +501,11 @@ PYBIND11_MODULE(polyfempy, m)
 					   .def(
 						   "export_vtu", [](polyfem::State &s, std::string &path, bool boundary_only) {
 							   //    py::scoped_ostream_redirect output;
-							   const bool tmp = s.args["export"]["vis_boundary_only"];
-							   s.args["export"]["vis_boundary_only"] = boundary_only;
+								auto& vis_bnd = s.args["output"]["advanced"]["vis_boundary_only"];
+							  const bool tmp = vis_bnd; 
+							  vis_bnd = boundary_only;
 							   s.save_vtu(path, 0);
-							   s.args["export"]["vis_boundary_only"] = tmp; },
+								 vis_bnd = tmp;},
 						   "exports the solution as vtu", py::arg("path"), py::arg("boundary_only") = bool(false))
 					   //    .def("export_wire", [](polyfem::State &s, std::string &path, bool isolines) { py::scoped_ostream_redirect output; s.save_wire(path, isolines); }, "exports wireframe of the mesh", py::arg("path"), py::arg("isolines") = false)
 
@@ -510,8 +524,9 @@ PYBIND11_MODULE(polyfempy, m)
 							   Eigen::MatrixXd discr;
 							   Eigen::MatrixXd fun;
 
-							   const bool tmp = s.args["export"]["vis_boundary_only"];
-							   s.args["export"]["vis_boundary_only"] = boundary_only;
+								auto& vis_bnd = s.args["output"]["advanced"]["vis_boundary_only"];
+							  const bool tmp = vis_bnd; 
+							  vis_bnd = boundary_only;
 
 							   s.build_vis_mesh(points, tets, el_id, discr);
 
@@ -523,7 +538,7 @@ PYBIND11_MODULE(polyfempy, m)
 								const bool use_sampler = true;
 							   s.interpolate_function(points.rows(), s.sol, fun, use_sampler, boundary_only);
 
-							   s.args["export"]["vis_boundary_only"] = tmp;
+							  vis_bnd = tmp;
 
 							   return py::make_tuple(points, tets, el_id, ids, fun); },
 						   "returns the solution on a densly sampled mesh, use 'vismesh_rel_area' to control density", py::arg("boundary_only") = bool(false))
@@ -536,15 +551,15 @@ PYBIND11_MODULE(polyfempy, m)
 							   Eigen::MatrixXi el_id;
 							   Eigen::MatrixXd discr;
 							   Eigen::MatrixXd fun;
-
-							   const bool tmp = s.args["export"]["vis_boundary_only"];
-							   s.args["export"]["vis_boundary_only"] = boundary_only;
+								auto& vis_bnd = s.args["output"]["advanced"]["vis_boundary_only"];
+							  const bool tmp = vis_bnd; 
+							  vis_bnd = boundary_only;
 
 							   s.build_vis_mesh(points, tets, el_id, discr);
 							   const bool use_sampler = true;
 							   s.compute_tensor_value(points.rows(), s.sol, fun, use_sampler, boundary_only);
 
-							   s.args["export"]["vis_boundary_only"] = tmp;
+								vis_bnd = tmp;
 
 							   return fun; },
 						   "returns the stress tensor on a densly sampled mesh, use 'vismesh_rel_area' to control density", py::arg("boundary_only") = bool(false))
@@ -558,14 +573,15 @@ PYBIND11_MODULE(polyfempy, m)
 							   Eigen::MatrixXd discr;
 							   Eigen::MatrixXd fun;
 
-							   const bool tmp = s.args["export"]["vis_boundary_only"];
-							   s.args["export"]["vis_boundary_only"] = boundary_only;
+								auto& vis_bnd = s.args["output"]["advanced"]["vis_boundary_only"];
+							  const bool tmp = vis_bnd; 
+							  vis_bnd = boundary_only;
 
 							   s.build_vis_mesh(points, tets, el_id, discr);
 							   	const bool use_sampler = true;
 							   s.compute_scalar_value(points.rows(), s.sol, fun, use_sampler, boundary_only);
 
-							   s.args["export"]["vis_boundary_only"] = tmp;
+								vis_bnd = tmp;
 
 							   return fun; },
 						   "returns the von mises stresses on a densly sampled mesh, use 'vismesh_rel_area' to control density", py::arg("boundary_only") = bool(false))
@@ -579,14 +595,15 @@ PYBIND11_MODULE(polyfempy, m)
 							   Eigen::MatrixXd discr;
 							   Eigen::MatrixXd fun, tfun;
 
-							   const bool tmp = s.args["export"]["vis_boundary_only"];
-							   s.args["export"]["vis_boundary_only"] = boundary_only;
+								auto& vis_bnd = s.args["output"]["advanced"]["vis_boundary_only"];
+							  const bool tmp = vis_bnd; 
+							  vis_bnd = boundary_only;
 
 							   s.build_vis_mesh(points, tets, el_id, discr);
 							   const bool use_sampler = true;
 							   s.average_grad_based_function(points.rows(), s.sol, fun, tfun, use_sampler, boundary_only);
 
-							   s.args["export"]["vis_boundary_only"] = tmp;
+								vis_bnd = tmp;
 
 							   return py::make_tuple(fun, tfun); },
 						   "returns the von mises stresses and stress tensor averaged around a vertex on a densly sampled mesh, use 'vismesh_rel_area' to control density", py::arg("boundary_only") = bool(false))
@@ -609,7 +626,7 @@ PYBIND11_MODULE(polyfempy, m)
 							   const double epsilon = 1e-10;
 
 							   {
-								   const polyfem::Mesh3D &mesh3d = *dynamic_cast<polyfem::Mesh3D *>(s.mesh.get());
+								   const polyfem::mesh::CMesh3D &mesh3d = *dynamic_cast<polyfem::mesh::CMesh3D *>(s.mesh.get());
 								   Eigen::MatrixXd points(mesh3d.n_vertices(), 3);
 								   Eigen::MatrixXi tets(mesh3d.n_cells(), 4);
 
@@ -743,11 +760,11 @@ PYBIND11_MODULE(polyfempy, m)
 							   using namespace polyfem;
 							   // py::scoped_ostream_redirect output;
 							   const json json_val = val;
-							   if (GenericTensorProblem *prob = dynamic_cast<GenericTensorProblem *>(self.problem.get()))
+							   if (polyfem::assembler::GenericTensorProblem *prob = dynamic_cast<polyfem::assembler::GenericTensorProblem *>(self.problem.get()))
 							   {
 								   prob->update_dirichlet_boundary(id, json_val, isx, isy, isz, interp);
 							   }
-							   else if (GenericScalarProblem *prob = dynamic_cast<GenericScalarProblem *>(self.problem.get()))
+							   else if (polyfem::assembler::GenericScalarProblem *prob = dynamic_cast<polyfem::assembler::GenericScalarProblem *>(self.problem.get()))
 							   {
 								   prob->update_dirichlet_boundary(id, json_val, interp);
 							   }
@@ -762,11 +779,11 @@ PYBIND11_MODULE(polyfempy, m)
 							   // py::scoped_ostream_redirect output;
 							   const json json_val = val;
 
-							   if (GenericTensorProblem *prob = dynamic_cast<GenericTensorProblem *>(self.problem.get()))
+							   if (auto prob = dynamic_cast<polyfem::assembler::GenericTensorProblem*>(self.problem.get()))
 							   {
 								   prob->update_neumann_boundary(id, json_val, interp);
 							   }
-							   else if (GenericScalarProblem *prob = dynamic_cast<GenericScalarProblem *>(self.problem.get()))
+							   else if (auto prob = dynamic_cast<polyfem::assembler::GenericScalarProblem *>(self.problem.get()))
 							   {
 								   prob->update_neumann_boundary(id, json_val, interp);
 							   }
@@ -781,7 +798,7 @@ PYBIND11_MODULE(polyfempy, m)
 							   // py::scoped_ostream_redirect output;
 							   const json json_val = val;
 
-							   if (GenericTensorProblem *prob = dynamic_cast<GenericTensorProblem *>(self.problem.get()))
+							   if (auto prob = dynamic_cast<polyfem::assembler::GenericTensorProblem *>(self.problem.get()))
 							   {
 								   prob->update_pressure_boundary(id, json_val, interp);
 							   }
@@ -798,7 +815,7 @@ PYBIND11_MODULE(polyfempy, m)
 							   self.obstacle.change_displacement(oid, json_val, interp); },
 						   "updates obstacle displacement", py::arg("oid"), py::arg("val"), py::arg("interp") = std::string(""))
 					   .def(
-						   "render", [rendering_lambda](polyfem::State &self, int width, int height, const Eigen::MatrixXd &camera_positionm, const double camera_fov, const double camera_near, const double camera_far, const bool is_perspective, const Eigen::MatrixXd &lookatm, const Eigen::MatrixXd &upm, const Eigen::MatrixXd &ambient_lightm, const std::vector<std::pair<Eigen::MatrixXd, Eigen::MatrixXd>> &lights, const Eigen::MatrixXd &diffuse_colorm, const Eigen::MatrixXd &specular_colorm, const double specular_exponent) {
+						   "render", [](polyfem::State &self, int width, int height, const Eigen::MatrixXd &camera_positionm, const double camera_fov, const double camera_near, const double camera_far, const bool is_perspective, const Eigen::MatrixXd &lookatm, const Eigen::MatrixXd &upm, const Eigen::MatrixXd &ambient_lightm, const std::vector<std::pair<Eigen::MatrixXd, Eigen::MatrixXd>> &lights, const Eigen::MatrixXd &diffuse_colorm, const Eigen::MatrixXd &specular_colorm, const double specular_exponent) {
 							   using namespace Eigen;
 
 							   const int problem_dim = self.problem->is_scalar() ? 1 : self.mesh->dimension();
@@ -816,7 +833,7 @@ PYBIND11_MODULE(polyfempy, m)
 							   return rendering_lambda(tmp, self.boundary_triangles, width, height, camera_positionm, camera_fov, camera_near, camera_far, is_perspective, lookatm, upm, ambient_lightm, lights, diffuse_colorm, specular_colorm, specular_exponent); },
 						   "renders the scene", py::kw_only(), py::arg("width"), py::arg("height"), py::arg("camera_position") = Eigen::MatrixXd(), py::arg("camera_fov") = double(0.8), py::arg("camera_near") = double(1), py::arg("camera_far") = double(10), py::arg("is_perspective") = bool(true), py::arg("lookat") = Eigen::MatrixXd(), py::arg("up") = Eigen::MatrixXd(), py::arg("ambient_light") = Eigen::MatrixXd(), py::arg("lights") = std::vector<std::pair<Eigen::MatrixXd, Eigen::MatrixXd>>(), py::arg("diffuse_color") = Eigen::MatrixXd(), py::arg("specular_color") = Eigen::MatrixXd(), py::arg("specular_exponent") = double(1))
 					   .def(
-						   "render_extrinsic", [rendering_lambda](polyfem::State &self, const std::vector<std::pair<Eigen::MatrixXd, Eigen::MatrixXi>> &vertex_face, int width, int height, const Eigen::MatrixXd &camera_positionm, const double camera_fov, const double camera_near, const double camera_far, const bool is_perspective, const Eigen::MatrixXd &lookatm, const Eigen::MatrixXd &upm, const Eigen::MatrixXd &ambient_lightm, const std::vector<std::pair<Eigen::MatrixXd, Eigen::MatrixXd>> &lights, const Eigen::MatrixXd &diffuse_colorm, const Eigen::MatrixXd &specular_colorm, const double specular_exponent) {
+						   "render_extrinsic", [](polyfem::State &self, const std::vector<std::pair<Eigen::MatrixXd, Eigen::MatrixXi>> &vertex_face, int width, int height, const Eigen::MatrixXd &camera_positionm, const double camera_fov, const double camera_near, const double camera_far, const bool is_perspective, const Eigen::MatrixXd &lookatm, const Eigen::MatrixXd &upm, const Eigen::MatrixXd &ambient_lightm, const std::vector<std::pair<Eigen::MatrixXd, Eigen::MatrixXd>> &lights, const Eigen::MatrixXd &diffuse_colorm, const Eigen::MatrixXd &specular_colorm, const double specular_exponent) {
 							   int v_count = 0;
 							   int f_count = 0;
 							   for (const auto& vf_pair : vertex_face) {
@@ -836,309 +853,221 @@ PYBIND11_MODULE(polyfempy, m)
 							   return rendering_lambda(vertices, faces, width, height, camera_positionm, camera_fov, camera_near, camera_far, is_perspective, lookatm, upm, ambient_lightm, lights, diffuse_colorm, specular_colorm, specular_exponent); },
 						   "renders the extrinsic scene", py::kw_only(), py::arg("vertex_face") = std::vector<std::pair<Eigen::MatrixXd, Eigen::MatrixXi>>(), py::arg("width"), py::arg("height"), py::arg("camera_position") = Eigen::MatrixXd(), py::arg("camera_fov") = double(0.8), py::arg("camera_near") = double(1), py::arg("camera_far") = double(10), py::arg("is_perspective") = bool(true), py::arg("lookat") = Eigen::MatrixXd(), py::arg("up") = Eigen::MatrixXd(), py::arg("ambient_light") = Eigen::MatrixXd(), py::arg("lights") = std::vector<std::pair<Eigen::MatrixXd, Eigen::MatrixXd>>(), py::arg("diffuse_color") = Eigen::MatrixXd(), py::arg("specular_color") = Eigen::MatrixXd(), py::arg("specular_exponent") = double(1));
 
-	solver.doc() = "Polyfem solver";
+  solver.doc() = "Polyfem solver";
 
-	m.def(
-		"polyfem_command", [](const std::string &json_file, const std::string &febio_file, const std::string &mesh, const std::string &problem_name, const std::string &scalar_formulation, const std::string &tensor_formulation, const int n_refs, const bool skip_normalization, const std::string &solver, const int discr_order, const bool p_ref, const bool count_flipped_els, const bool force_linear_geom, const double vis_mesh_res, const bool project_to_psd, const int nl_solver_rhs_steps, const std::string &output, const std::string &vtu, const int log_level, const std::string &log_file, const bool is_quiet, const bool export_material_params) {
-			json in_args = json({});
+  m.def(
+      "polyfem_command",
+      [](const std::string &json_file, const std::string &febio_file,
+         const std::string &mesh, const std::string &problem_name,
+         const std::string &scalar_formulation,
+         const std::string &tensor_formulation, const int n_refs,
+         const bool skip_normalization, const std::string &solver,
+         const int discr_order, const bool p_ref, const bool count_flipped_els,
+         const bool force_linear_geom, const double vis_mesh_res,
+         const bool project_to_psd, const int nl_solver_rhs_steps,
+         const std::string &output, const std::string &vtu, const int log_level,
+         const std::string &log_file, const bool is_quiet,
+         const bool export_material_params) {
+        json in_args = json({});
 
-			if (!json_file.empty())
-			{
-				std::ifstream file(json_file);
+        if (!json_file.empty())
+        {
+          std::ifstream file(json_file);
 
-				if (file.is_open())
-					file >> in_args;
-				else
-					throw "unable to open " + json_file + " file";
-				file.close();
-			}
-			else
-			{
-				in_args["mesh"] = mesh;
-				in_args["force_linear_geometry"] = force_linear_geom;
-				in_args["n_refs"] = n_refs;
-				if (!problem_name.empty())
-					in_args["problem"] = problem_name;
-				in_args["normalize_mesh"] = !skip_normalization;
-				in_args["project_to_psd"] = project_to_psd;
+          if (file.is_open())
+            file >> in_args;
+          else
+            throw "unable to open " + json_file + " file";
+          file.close();
+        }
+        else
+        {
+          in_args["geometry"][0]["mesh"] = mesh;
+          in_args["force_linear_geometry"] = force_linear_geom;
+          in_args["n_refs"] = n_refs;
+          if (!problem_name.empty())
+            in_args["problem"] = problem_name;
+          in_args["geometry"][0]["advanced"]["normalize_mesh"] =
+              !skip_normalization;
+          in_args["project_to_psd"] = project_to_psd;
 
-				if (!scalar_formulation.empty())
-					in_args["scalar_formulation"] = scalar_formulation;
-				if (!tensor_formulation.empty())
-					in_args["tensor_formulation"] = tensor_formulation;
-				// in_args["mixed_formulation"] = mixed_formulation;
+          if (!scalar_formulation.empty())
+            in_args["scalar_formulation"] = scalar_formulation;
+          if (!tensor_formulation.empty())
+            in_args["tensor_formulation"] = tensor_formulation;
+          // in_args["mixed_formulation"] = mixed_formulation;
 
-				in_args["discr_order"] = discr_order;
-				// in_args["use_spline"] = use_splines;
-				in_args["count_flipped_els"] = count_flipped_els;
-				in_args["output"] = output;
-				in_args["use_p_ref"] = p_ref;
-				// in_args["iso_parametric"] = isoparametric;
-				// in_args["serendipity"] = serendipity;
+          in_args["discr_order"] = discr_order;
+          // in_args["use_spline"] = use_splines;
+          in_args["count_flipped_els"] = count_flipped_els;
+          in_args["output"] = output;
+          in_args["use_p_ref"] = p_ref;
+          // in_args["iso_parametric"] = isoparametric;
+          // in_args["serendipity"] = serendipity;
 
-				in_args["nl_solver_rhs_steps"] = nl_solver_rhs_steps;
+          in_args["nl_solver_rhs_steps"] = nl_solver_rhs_steps;
 
-				if (!vtu.empty())
-				{
-					in_args["export"]["vis_mesh"] = vtu;
-					in_args["export"]["wire_mesh"] = polyfem::StringUtils::replace_ext(vtu, "obj");
-				}
-				if (!solver.empty())
-					in_args["solver_type"] = solver;
+          if (!vtu.empty())
+          {
+            in_args["export"]["vis_mesh"] = vtu;
+            in_args["export"]["wire_mesh"] =
+                polyfem::utils::StringUtils::replace_ext(vtu, "obj");
+          }
+          if (!solver.empty())
+            in_args["solver_type"] = solver;
 
-				if (vis_mesh_res > 0)
-					in_args["vismesh_rel_area"] = vis_mesh_res;
+          if (vis_mesh_res > 0)
+            in_args["output"]["paraview"]["vismesh_rel_area"] = vis_mesh_res;
 
-				if (export_material_params)
-					in_args["export"]["material_params"] = true;
-			}
+          if (export_material_params)
+            in_args["export"]["material_params"] = true;
+        }
 
-			polyfem::State state;
-			state.init_logger(log_file, log_level, is_quiet);
-			state.init(in_args);
+        polyfem::State state;
+        state.init_logger(log_file, log_level, is_quiet);
+        state.init(in_args);
 
-			if (!febio_file.empty())
-				state.load_febio(febio_file, in_args);
-			else
-				state.load_mesh();
-			state.compute_mesh_stats();
+        if (!febio_file.empty())
+          state.load_febio(febio_file, in_args);
+        else
+          state.load_mesh();
+        state.compute_mesh_stats();
 
-			state.build_basis();
+        state.build_basis();
 
-			state.assemble_rhs();
-			state.assemble_stiffness_mat();
+        state.assemble_rhs();
+        state.assemble_stiffness_mat();
 
-			state.solve_problem();
+        state.solve_problem();
 
-			state.compute_errors();
+        state.compute_errors();
 
-			state.save_json();
-			state.export_data(); },
-		"runs the polyfem command, internal usage");
+        state.save_json();
+        state.export_data();
+      },
+      "runs the polyfem command, internal usage");
 
-	m.def(
-		"solve_febio", [](const std::string &febio_file, const std::string &output_path, const int log_level, const py::kwargs &kwargs) {
-			if (febio_file.empty())
-				throw pybind11::value_error("Specify a febio file!");
+  m.def(
+      "solve_febio",
+      [](const std::string &febio_file, const std::string &output_path,
+         const int log_level, const py::kwargs &kwargs) {
+        if (febio_file.empty())
+          throw pybind11::value_error("Specify a febio file!");
 
-			// json in_args = opts.is_none() ? json({}) : json(opts);
-			json in_args = json(static_cast<py::dict>(kwargs));
+        // json in_args = opts.is_none() ? json({}) : json(opts);
+        json in_args = json(static_cast<py::dict>(kwargs));
 
-			if (!output_path.empty())
-			{
-				in_args["export"]["paraview"] = output_path;
-				in_args["export"]["wire_mesh"] = polyfem::StringUtils::replace_ext(output_path, "obj");
-				in_args["export"]["material_params"] = true;
-				in_args["export"]["body_ids"] = true;
-				in_args["export"]["contact_forces"] = true;
-				in_args["export"]["surface"] = true;
-			}
+        if (!output_path.empty())
+        {
+          in_args["export"]["paraview"] = output_path;
+          in_args["export"]["wire_mesh"] =
+              polyfem::utils::StringUtils::replace_ext(output_path, "obj");
+          in_args["export"]["material_params"] = true;
+          in_args["export"]["body_ids"] = true;
+          in_args["export"]["contact_forces"] = true;
+          in_args["export"]["surface"] = true;
+        }
 
-			const int discr_order = in_args.contains("discr_order") ? int(in_args["discr_order"]) : 1;
+        const int discr_order =
+            in_args.contains("discr_order") ? int(in_args["discr_order"]) : 1;
 
-			if (discr_order == 1 && !in_args.contains("vismesh_rel_area"))
-				in_args["vismesh_rel_area"] = 1e10;
+        if (discr_order == 1 && !in_args.contains("vismesh_rel_area"))
+          in_args["output"]["paraview"]["vismesh_rel_area"] = 1e10;
 
-			polyfem::State state;
-			state.init_logger("", log_level, false);
-			state.init(in_args);
-			state.load_febio(febio_file, in_args);
-			state.compute_mesh_stats();
+        polyfem::State state;
+        state.init_logger("", log_level, false);
+        state.init(in_args);
+        state.load_febio(febio_file, in_args);
+        state.compute_mesh_stats();
 
-			state.build_basis();
+        state.build_basis();
 
-			state.assemble_rhs();
-			state.assemble_stiffness_mat();
+        state.assemble_rhs();
+        state.assemble_stiffness_mat();
 
-			state.solve_problem();
+        state.solve_problem();
 
-			//state.compute_errors();
+        // state.compute_errors();
 
-			state.save_json();
-			state.export_data(); },
-		"runs FEBio", py::arg("febio_file"), py::arg("output_path") = std::string(""), py::arg("log_level") = 2);
+        state.save_json();
+        state.export_data();
+      },
+      "runs FEBio", py::arg("febio_file"),
+      py::arg("output_path") = std::string(""), py::arg("log_level") = 2);
 
-	m.def(
-		"solve", [](const Eigen::MatrixXd &vertices, const Eigen::MatrixXi &cells, const py::object &sidesets_func, const py::list &sidesets_selection, const py::list &body_selection, const py::list &materials, const std::string &pde, const py::list &diriclet_bc, const py::list &neumann_bc, const py::list &pressure_bc, const py::object &rhs, const bool is_time_dependent, const py::dict &expo, const int log_level, const py::kwargs &kwargs) {
-			std::string log_file = "";
-			const bool is2d = vertices.cols() == 2;
+  m.def(
+      "solve",
+      [](const Eigen::MatrixXd &vertices, const Eigen::MatrixXi &cells,
+         const py::object &sidesets_func, const int log_level,
+         const py::kwargs &kwargs) {
+        std::string log_file = "";
 
-			std::unique_ptr<polyfem::State> res = std::make_unique<polyfem::State>();
-			polyfem::State &state = *res;
-			state.init_logger(log_file, log_level, false);
-			// const int kwargs_size = std::distance(kwargs.begin(), kwargs.end());
-			json in_args = json(static_cast<py::dict>(kwargs));
+        std::unique_ptr<polyfem::State> res =
+            std::make_unique<polyfem::State>();
+        polyfem::State &state = *res;
+        state.init_logger(log_file, log_level, false);
 
-			if (!in_args.contains("normalize_mesh"))
-				in_args["normalize_mesh"] = false;
+        json in_args = json(static_cast<py::dict>(kwargs));
 
-			const bool is_scalar = polyfem::AssemblerUtils::is_scalar(pde);
-			in_args["scalar_formulation"] = "";
-			in_args["tensor_formulation"] = "";
+        state.init(in_args);
 
-			if (is_scalar)
-				in_args["scalar_formulation"] = pde;
-			else
-				in_args["tensor_formulation"] = pde;
-			in_args["problem"] = is_scalar ? "GenericScalar" : "GenericTensor";
+        state.load_mesh(vertices, cells);
 
-			const int sidesets_selection_size = std::distance(sidesets_selection.begin(), sidesets_selection.end());
+        [&]() {
+          if (!sidesets_func.is_none())
+          {
+            try
+            {
+              const auto fun =
+                  sidesets_func
+                      .cast<std::function<int(const polyfem::RowVectorNd &)>>();
+              state.mesh->compute_boundary_ids(fun);
+              return true;
+            }
+            catch (...)
+            {
+              {
+              }
+            }
+            try
+            {
+              const auto fun = sidesets_func.cast<
+                  std::function<int(const polyfem::RowVectorNd &, bool)>>();
+              state.mesh->compute_boundary_ids(fun);
+              return true;
+            }
+            catch (...)
+            {
+            }
 
-			if (!sidesets_func.is_none())
-			{
-			}
-			else if (sidesets_selection_size > 0 && !in_args.contains("boundary_sidesets"))
-			{
-				json selections = json::array();
+            try
+            {
+              const auto fun = sidesets_func.cast<
+                  std::function<int(const std::vector<int> &, bool)>>();
+              state.mesh->compute_boundary_ids(fun);
+              return true;
+            }
+            catch (...)
+            {
+            }
 
-				for (const auto &d : sidesets_selection)
-				{
-					selections.push_back(json(d));
-				}
+            throw pybind11::value_error(
+                "sidesets_func has invalid type, should be a function (p)->int, (p, bool)->int, ([], bool)->int");
+          }
+        }();
 
-				in_args["boundary_sidesets"] = selections;
-			}
+        state.compute_mesh_stats();
 
-			const int body_selection_size = std::distance(body_selection.begin(), body_selection.end());
-			if (body_selection_size > 0 && !in_args.contains("body_ids"))
-			{
-				json selections = json::array();
+        state.build_basis();
 
-				for (const auto &d : body_selection)
-				{
-					selections.push_back(json(d));
-				}
+        state.assemble_rhs();
+        state.assemble_stiffness_mat();
+        state.solve_problem();
 
-				in_args["body_ids"] = selections;
-			}
-
-			const int materials_size = std::distance(materials.begin(), materials.end());
-			if (materials_size > 1 && !in_args.contains("body_params"))
-			{
-
-				json materialss = json::array();
-
-				for (const auto &d : materials)
-				{
-					materialss.push_back(json(d));
-				}
-
-				in_args["body_params"] = materialss;
-			}
-			else if (materials_size == 1 && !in_args.contains("params"))
-			{
-				in_args["params"] = json(materials[0]);
-			}
-
-			if (!in_args.contains("problem_params"))
-				in_args["problem_params"] = {};
-
-			if (!in_args["problem_params"].contains("is_time_dependent"))
-				in_args["problem_params"]["is_time_dependent"] = is_time_dependent;
-
-			const int diriclet_bc_size = std::distance(diriclet_bc.begin(), diriclet_bc.end());
-			if (diriclet_bc_size > 0 && !in_args["problem_params"].contains("dirichlet_boundary"))
-			{
-				json bcs = json::array();
-				for (const auto &d : diriclet_bc)
-				{
-					bcs.push_back(json(d));
-				}
-				in_args["problem_params"]["dirichlet_boundary"] = bcs;
-			}
-			const int neumann_bc_size = std::distance(neumann_bc.begin(), neumann_bc.end());
-			if (neumann_bc_size > 0 && !in_args["problem_params"].contains("neumann_boundary"))
-			{
-				json bcs = json::array();
-				for (const auto &d : neumann_bc)
-				{
-					bcs.push_back(json(d));
-				}
-				in_args["problem_params"]["neumann_boundary"] = bcs;
-			}
-			const int pressure_bc_size = std::distance(pressure_bc.begin(), pressure_bc.end());
-			if (pressure_bc_size > 0 && !in_args["problem_params"].contains("pressure_boundary"))
-			{
-				json bcs = json::array();
-				for (const auto &d : pressure_bc)
-				{
-					bcs.push_back(json(d));
-				}
-				in_args["problem_params"]["pressure_boundary"] = bcs;
-			}
-
-			if (!rhs.is_none() && !in_args["problem_params"].contains("rhs"))
-				in_args["problem_params"]["rhs"] = json(rhs);
-
-			json export_json = json(expo);
-
-			if (!in_args.contains("export"))
-				in_args["export"] = export_json;
-
-			state.init(in_args);
-
-			if (vertices.size() > 0 && cells.size() > 0)
-			{
-				if (is2d)
-					state.mesh = std::make_unique<polyfem::CMesh2D>();
-				else
-					state.mesh = std::make_unique<polyfem::Mesh3D>();
-				state.mesh->build_from_matrices(vertices, cells);
-			}
-			state.load_mesh();
-
-			if (!sidesets_func.is_none())
-			{
-				bool set = false;
-				try
-				{
-					const auto fun = sidesets_func.cast<std::function<int(const polyfem::RowVectorNd &)>>();
-					state.mesh->compute_boundary_ids(fun);
-					set = true;
-				}
-				catch (...)
-				{
-				}
-
-				if (!set)
-				{
-					try
-					{
-						const auto fun = sidesets_func.cast<std::function<int(const polyfem::RowVectorNd &, bool)>>();
-						state.mesh->compute_boundary_ids(fun);
-						set = true;
-					}
-					catch (...)
-					{
-					}
-				}
-
-				if (!set)
-				{
-					try
-					{
-						const auto fun = sidesets_func.cast<std::function<int(const std::vector<int> &, bool)>>();
-						state.mesh->compute_boundary_ids(fun);
-						set = true;
-					}
-					catch (...)
-					{
-					}
-				}
-
-				if (!set)
-					throw pybind11::value_error("sidesets_func has invalid type, should be a function (p)->int, (p, bool)->int, ([], bool)->int");
-			}
-
-			state.compute_mesh_stats();
-
-			state.build_basis();
-
-			state.assemble_rhs();
-			state.assemble_stiffness_mat();
-			state.solve_problem();
-
-			return res;
-		},
-		"single solve function", py::kw_only(), py::arg("vertices") = Eigen::MatrixXd(), py::arg("cells") = Eigen::MatrixXi(), py::arg("sidesets_func") = py::none(), py::arg("sidesets_selection") = py::list(), py::arg("body_selection") = py::list(), py::arg("materials") = py::list(), py::arg("pde") = std::string("LinearElasticity"), py::arg("diriclet_bc") = py::list(), py::arg("neumann_bc") = py::list(), py::arg("pressure_bc") = py::list(), py::arg("rhs") = py::none(), py::arg("is_time_dependent") = bool(false), py::arg("export") = py::dict(), py::arg("log_level") = 2);
+        return res;
+      },
+      "single solve function", py::kw_only(),
+      py::arg("vertices") = Eigen::MatrixXd(),
+      py::arg("cells") = Eigen::MatrixXi(),
+      py::arg("sidesets_func") = py::none(), py::arg("log_level") = 2);
 }

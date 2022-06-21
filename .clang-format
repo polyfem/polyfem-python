@@ -2,10 +2,9 @@
 # https://clang.llvm.org/docs/ClangFormatStyleOptions.html
 Language: Cpp
 BasedOnStyle: LLVM
-# ColumnLimit: 80
-ColumnLimit: 0
-UseTab: ForContinuationAndIndentation
-IndentWidth: 4
+ColumnLimit: 80
+UseTab: Never
+IndentWidth: 2
 TabWidth: 4
 BreakBeforeBraces: Custom
 BraceWrapping:

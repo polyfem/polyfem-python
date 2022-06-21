@@ -57,7 +57,7 @@ class CMakeBuild(build_ext):
                       #   '-DPOLYFEM_THREADING=NONE',
                       '-DPOLYFEM_NO_UI=ON',
                       '-DPOLYSOLVE_WITH_AMGCL=OFF',
-                      '-DPOLYSOLVE_WITH_MKL=OFF',
+                      '-DPOLYSOLVE_WITH_MKL=ON',
                       '-DPOLYSOLVE_WITH_SPECTRA=OFF']
 
         cfg = 'Debug' if self.debug else 'Release'
@@ -75,8 +75,9 @@ class CMakeBuild(build_ext):
             build_args += ['--', '-j{}'.format(n_threads)]
 
         env = os.environ.copy()
-        env['CXXFLAGS'] = '{} -DVERSION_INFO=\"{}\"'.format(
-            env.get('CXXFLAGS', ''), self.distribution.get_version())
+        # env['CXXFLAGS'] = '{} -DVERSION_INFO=\"{}\"'.format(
+            # env.get('CXXFLAGS', ''), self.distribution.get_version())
+        # print(env['CXXFLAGS'])
 
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)

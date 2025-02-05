@@ -1,5 +1,5 @@
 # polyfem-python
-![Build](https://github.com/polyfem/polyfem-python/workflows/Build/badge.svg)
+[![Build](https://github.com/polyfem/polyfem-python/workflows/Build/badge.svg)](https://github.com/polyfem/polyfem-python/actions/workflows/continuous.yml)
 
 
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/polyfempy/badges/latest_release_date.svg)](https://anaconda.org/conda-forge/polyfempy)

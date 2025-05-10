@@ -67,4 +67,4 @@ jobs:
       - name: Tests
         if: matrix.name == 'Linux' || matrix.name == 'MacOS' || (matrix.config == 'Debug' && runner.os == 'Windows')
         run: |
-          python test/test_bending.py
+          python test/test_basic.py

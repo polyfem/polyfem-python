@@ -6,7 +6,6 @@
 #include <polyfem/utils/Logger.hpp>
 #include <polyfem/utils/StringUtils.hpp>
 #include <polyfem/utils/JSONUtils.hpp>
-#include <polyfem/utils/GeogramUtils.hpp>
 #include <polyfem/solver/NLProblem.hpp>
 #include <polyfem/time_integrator/ImplicitTimeIntegrator.hpp>
 #include <polyfem/State.hpp>

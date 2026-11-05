@@ -1,6 +1,3 @@
-#include <geogram/basic/command_line.h>
-#include <geogram/basic/command_line_args.h>
-
 #include <stdexcept>
 
 #include <pybind11_json/pybind11_json.hpp>

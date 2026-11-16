@@ -1,0 +1,294 @@
+{
+  "api_aliases": [
+    {
+      "main_api_name": "material_models",
+      "main_class_path": "Root.Materials.MaterialSum.Models",
+      "api_generated_name": "models",
+      "kind": "custom_api_name",
+      "aliases": [
+        {
+          "alias_name": "models",
+          "alias_class_path": "Root.Materials.MaterialSum.Models",
+          "hide": true,
+          "reason": "The generated name is too generic; material_models explains that this is the model list used by MaterialSum."
+        }
+      ]
+    },
+    {
+      "main_api_name": "neo_hookean",
+      "main_class_path": "Root.Materials.NeoHookean",
+      "aliases": [
+        {
+          "alias_name": "models_neo_hookean",
+          "alias_class_path": "Root.Materials.MaterialSum.Models.NeoHookean",
+          "hide": true,
+          "reason": "Nested MaterialSum.Models helper is an internal placement of the same material concept; users should call neo_hookean(...)."
+        }
+      ]
+    },
+    {
+      "main_api_name": "isochoric_neo_hookean",
+      "main_class_path": "Root.Materials.IsochoricNeoHookean",
+      "aliases": [
+        {
+          "alias_name": "models_isochoric_neo_hookean",
+          "alias_class_path": "Root.Materials.MaterialSum.Models.IsochoricNeoHookean",
+          "hide": true,
+          "reason": "Nested MaterialSum.Models helper is an internal placement of the same material concept; users should call isochoric_neo_hookean(...)."
+        }
+      ]
+    },
+    {
+      "main_api_name": "mooney_rivlin",
+      "main_class_path": "Root.Materials.MooneyRivlin",
+      "aliases": [
+        {
+          "alias_name": "models_mooney_rivlin",
+          "alias_class_path": "Root.Materials.MaterialSum.Models.MooneyRivlin",
+          "hide": true,
+          "reason": "Nested MaterialSum.Models helper is an internal placement of the same material concept; users should call mooney_rivlin(...)."
+        }
+      ]
+    },
+    {
+      "main_api_name": "mooney_rivlin3_param",
+      "main_class_path": "Root.Materials.MooneyRivlin3Param",
+      "aliases": [
+        {
+          "alias_name": "models_mooney_rivlin3_param",
+          "alias_class_path": "Root.Materials.MaterialSum.Models.MooneyRivlin3Param",
+          "hide": true,
+          "reason": "Nested MaterialSum.Models helper is an internal placement of the same material concept; users should call mooney_rivlin3_param(...)."
+        }
+      ]
+    },
+    {
+      "main_api_name": "mooney_rivlin3_param_symbolic",
+      "main_class_path": "Root.Materials.MooneyRivlin3ParamSymbolic",
+      "aliases": [
+        {
+          "alias_name": "models_mooney_rivlin3_param_symbolic",
+          "alias_class_path": "Root.Materials.MaterialSum.Models.MooneyRivlin3ParamSymbolic",
+          "hide": true,
+          "reason": "Nested MaterialSum.Models helper is an internal placement of the same material concept; users should call mooney_rivlin3_param_symbolic(...)."
+        }
+      ]
+    },
+    {
+      "main_api_name": "unconstrained_ogden",
+      "main_class_path": "Root.Materials.UnconstrainedOgden",
+      "aliases": [
+        {
+          "alias_name": "models_unconstrained_ogden",
+          "alias_class_path": "Root.Materials.MaterialSum.Models.UnconstrainedOgden",
+          "hide": true,
+          "reason": "Nested MaterialSum.Models helper is an internal placement of the same material concept; users should call unconstrained_ogden(...)."
+        }
+      ]
+    },
+    {
+      "main_api_name": "incompressible_ogden",
+      "main_class_path": "Root.Materials.IncompressibleOgden",
+      "aliases": [
+        {
+          "alias_name": "models_incompressible_ogden",
+          "alias_class_path": "Root.Materials.MaterialSum.Models.IncompressibleOgden",
+          "hide": true,
+          "reason": "Nested MaterialSum.Models helper is an internal placement of the same material concept; users should call incompressible_ogden(...)."
+        }
+      ]
+    },
+    {
+      "main_api_name": "linear_elasticity",
+      "main_class_path": "Root.Materials.LinearElasticity",
+      "aliases": [
+        {
+          "alias_name": "models_linear_elasticity",
+          "alias_class_path": "Root.Materials.MaterialSum.Models.LinearElasticity",
+          "hide": true,
+          "reason": "Nested MaterialSum.Models helper is an internal placement of the same material concept; users should call linear_elasticity(...)."
+        }
+      ]
+    },
+    {
+      "main_api_name": "hooke_linear_elasticity",
+      "main_class_path": "Root.Materials.HookeLinearElasticity",
+      "aliases": [
+        {
+          "alias_name": "models_hooke_linear_elasticity",
+          "alias_class_path": "Root.Materials.MaterialSum.Models.HookeLinearElasticity",
+          "hide": true,
+          "reason": "Nested MaterialSum.Models helper is an internal placement of the same material concept; users should call hooke_linear_elasticity(...)."
+        }
+      ]
+    },
+    {
+      "main_api_name": "saint_venant",
+      "main_class_path": "Root.Materials.SaintVenant",
+      "aliases": [
+        {
+          "alias_name": "models_saint_venant",
+          "alias_class_path": "Root.Materials.MaterialSum.Models.SaintVenant",
+          "hide": true,
+          "reason": "Nested MaterialSum.Models helper is an internal placement of the same material concept; users should call saint_venant(...)."
+        }
+      ]
+    },
+    {
+      "main_api_name": "stokes",
+      "main_class_path": "Root.Materials.Stokes",
+      "aliases": [
+        {
+          "alias_name": "models_stokes",
+          "alias_class_path": "Root.Materials.MaterialSum.Models.Stokes",
+          "hide": true,
+          "reason": "Nested MaterialSum.Models helper is an internal placement of the same material concept; users should call stokes(...)."
+        }
+      ]
+    },
+    {
+      "main_api_name": "navier_stokes",
+      "main_class_path": "Root.Materials.NavierStokes",
+      "aliases": [
+        {
+          "alias_name": "models_navier_stokes",
+          "alias_class_path": "Root.Materials.MaterialSum.Models.NavierStokes",
+          "hide": true,
+          "reason": "Nested MaterialSum.Models helper is an internal placement of the same material concept; users should call navier_stokes(...)."
+        }
+      ]
+    },
+    {
+      "main_api_name": "operator_splitting",
+      "main_class_path": "Root.Materials.OperatorSplitting",
+      "aliases": [
+        {
+          "alias_name": "models_operator_splitting",
+          "alias_class_path": "Root.Materials.MaterialSum.Models.OperatorSplitting",
+          "hide": true,
+          "reason": "Nested MaterialSum.Models helper is an internal placement of the same material concept; users should call operator_splitting(...)."
+        }
+      ]
+    },
+    {
+      "main_api_name": "electrostatics",
+      "main_class_path": "Root.Materials.Electrostatics",
+      "aliases": [
+        {
+          "alias_name": "models_electrostatics",
+          "alias_class_path": "Root.Materials.MaterialSum.Models.Electrostatics",
+          "hide": true,
+          "reason": "Nested MaterialSum.Models helper is an internal placement of the same material concept; users should call electrostatics(...)."
+        }
+      ]
+    },
+    {
+      "main_api_name": "incompressible_linear_elasticity",
+      "main_class_path": "Root.Materials.IncompressibleLinearElasticity",
+      "aliases": [
+        {
+          "alias_name": "models_incompressible_linear_elasticity",
+          "alias_class_path": "Root.Materials.MaterialSum.Models.IncompressibleLinearElasticity",
+          "hide": true,
+          "reason": "Nested MaterialSum.Models helper is an internal placement of the same material concept; users should call incompressible_linear_elasticity(...)."
+        }
+      ]
+    },
+    {
+      "main_api_name": "material_sum",
+      "main_class_path": "Root.Materials.MaterialSum",
+      "aliases": [
+        {
+          "alias_name": "models_material_sum",
+          "alias_class_path": "Root.Materials.MaterialSum.Models.MaterialSum",
+          "hide": true,
+          "reason": "Nested MaterialSum.Models helper is an internal placement of the same material concept; users should call material_sum(...)."
+        }
+      ]
+    },
+    {
+      "main_api_name": "laplacian",
+      "main_class_path": "Root.Materials.Laplacian",
+      "aliases": [
+        {
+          "alias_name": "models_laplacian",
+          "alias_class_path": "Root.Materials.MaterialSum.Models.Laplacian",
+          "hide": true,
+          "reason": "Nested MaterialSum.Models helper is an internal placement of the same material concept; users should call laplacian(...)."
+        }
+      ]
+    },
+    {
+      "main_api_name": "helmholtz",
+      "main_class_path": "Root.Materials.Helmholtz",
+      "aliases": [
+        {
+          "alias_name": "models_helmholtz",
+          "alias_class_path": "Root.Materials.MaterialSum.Models.Helmholtz",
+          "hide": true,
+          "reason": "Nested MaterialSum.Models helper is an internal placement of the same material concept; users should call helmholtz(...)."
+        }
+      ]
+    },
+    {
+      "main_api_name": "bilaplacian",
+      "main_class_path": "Root.Materials.Bilaplacian",
+      "aliases": [
+        {
+          "alias_name": "models_bilaplacian",
+          "alias_class_path": "Root.Materials.MaterialSum.Models.Bilaplacian",
+          "hide": true,
+          "reason": "Nested MaterialSum.Models helper is an internal placement of the same material concept; users should call bilaplacian(...)."
+        }
+      ]
+    },
+    {
+      "main_api_name": "amips",
+      "main_class_path": "Root.Materials.AMIPS",
+      "aliases": [
+        {
+          "alias_name": "models_amips",
+          "alias_class_path": "Root.Materials.MaterialSum.Models.AMIPS",
+          "hide": true,
+          "reason": "Nested MaterialSum.Models helper is an internal placement of the same material concept; users should call amips(...)."
+        }
+      ]
+    },
+    {
+      "main_api_name": "fixed_corotational",
+      "main_class_path": "Root.Materials.FixedCorotational",
+      "aliases": [
+        {
+          "alias_name": "models_fixed_corotational",
+          "alias_class_path": "Root.Materials.MaterialSum.Models.FixedCorotational",
+          "hide": true,
+          "reason": "Nested MaterialSum.Models helper is an internal placement of the same material concept; users should call fixed_corotational(...)."
+        }
+      ]
+    },
+    {
+      "main_api_name": "volume_penalty",
+      "main_class_path": "Root.Materials.VolumePenalty",
+      "aliases": [
+        {
+          "alias_name": "models_volume_penalty",
+          "alias_class_path": "Root.Materials.MaterialSum.Models.VolumePenalty",
+          "hide": true,
+          "reason": "Nested MaterialSum.Models helper is an internal placement of the same material concept; users should call volume_penalty(...)."
+        }
+      ]
+    },
+    {
+      "main_api_name": "hgo_fiber",
+      "main_class_path": "Root.Materials.HGOFiber",
+      "aliases": [
+        {
+          "alias_name": "models_hgo_fiber",
+          "alias_class_path": "Root.Materials.MaterialSum.Models.HGOFiber",
+          "hide": true,
+          "reason": "Nested MaterialSum.Models helper is an internal placement of the same material concept; users should call hgo_fiber(...)."
+        }
+      ]
+    }
+  ]
+}

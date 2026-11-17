@@ -28,9 +28,17 @@ config = model.config()
 
 These setters return the model and replace the same section when called again.
 Passing that section again to `model.config(...)` raises an error instead of
-silently overriding it. Existing builder methods (including `space()` and
-body/selection helpers) retain their existing behavior; they are not replaced
-by generated setters.
+silently overriding it. Shared builder methods also support setting `space`,
+`materials`, and `initial_conditions`, while preserving their no-argument reads.
+`boundary_conditions(...)` saves keyword settings but keeps its dictionary return
+value for existing callers. Passing that unchanged dictionary to `model.config(...)`
+is supported without duplicating boundary entries.
+
+Explicit section settings are combined with body settings when exporting the
+model. Lists are appended; conflicting non-list fields raise an error. Repeating
+a setter replaces only its explicit settings. ID assignment remains in the
+shared builder and relationship rules, so users can work with body and selection
+objects. See [Model settings](../API.md#model-settings) for examples and merge rules.
 
 Maintain this behavior in `python-from-jse/generator/JsonToTreeClass.py` and
 `python-from-jse/generator/model_builder.py`, not the generated output. From the

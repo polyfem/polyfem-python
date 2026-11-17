@@ -184,7 +184,51 @@ vertices. Open the saved `.pvd` file in ParaView to view the result on the mesh.
 state; use the saved output files for earlier time steps. `result.meta` contains
 backend metadata, whose keys may depend on the solve.
 
-Configuration sections can also be set with `model.time(...)`, `model.output(...)` and other generated section methods. Use one configuration style for each section. Passing a section to `model.config(...)` after setting it on the model raises an error.
+## Model settings
+
+Section methods save their settings for the next `model.config()` call:
+
+```python
+model = polyfem.model()
+body = model.mesh(mesh="part.msh")
+body.dirichlet(value=[0, 0])
+model.materials(polyfem.neo_hookean(E=1000, nu=0.3))
+model.space(discr_order=2)
+model.boundary_conditions(rhs=[0, -1])
+model.output(directory="results/example")
+config = model.config()
+```
+
+This is a configuration example; supply a 2D mesh at `part.msh` before solving.
+`model.materials(...)` accepts one material or a list. Use `body.material(...)`
+for different materials on different bodies; the builder assigns their IDs.
+Similarly, use `body.velocity(...)`, `body.solution(...)`, and
+`body.acceleration(...)` for body-specific initial conditions.
+
+- `model.space(...)`, `model.initial_conditions(...)`, and `model.materials(...)`
+  save settings and return the model, like `model.time(...)` and `model.output(...)`.
+- Calling `model.space()`, `model.initial_conditions()`, or `model.materials()`
+  without arguments still returns the current configuration for that section.
+- `model.boundary_conditions(...)` now saves its keyword settings. It still
+  returns a dictionary for compatibility. With no arguments, it only reads the
+  current boundary configuration.
+- Calling a section setter again replaces its explicit settings, not the values
+  attached to bodies. Supply all explicit fields you want to keep on that call.
+- Explicit lists are combined with body and boundary lists. Other fields are
+  kept together when their names differ. Conflicting global and body-specific
+  values raise an error; for example, choose either `model.space(discr_order=2)`
+  or per-body `body.discr_order(...)`. Global and body-specific RHS also cannot
+  be mixed.
+
+The existing `model.config(space=polyfem.space(...), ...)` style remains available.
+These arguments apply to that export only; they do not save settings on the model.
+Use one configuration style per section. Passing a section to `model.config(...)`
+after setting it on the model raises an error. For compatibility, the unchanged
+dictionary returned by `model.boundary_conditions(...)` can still be passed as
+`model.config(boundary_conditions=...)`; its boundary entries are not added twice.
+
+`model.geometry()` remains a read method. Add geometry with `model.mesh(...)`
+and the other geometry methods.
 
 To show only errors in the terminal, set
 `model.output(log=polyfem.output_log(level="error"))`. For a dictionary, use

@@ -33,6 +33,13 @@ not that standalone suite.
 
 ## Native solver
 
+After rebuilding the Python extension, run
+`python -m pytest tests/test_array_mesh_selections.py -q -rs` to check array
+selection binding. Two native cases compare whole and partial boundary solves
+against file input. They skip when the backend is unavailable; the remaining
+cases check Python routing and automatic IDs without a native solve.
+These tests do not build the extension.
+
 With a wheel installed in a clean environment, run the README beam,
 installation self-check, and Neo-Hookean cube reference check:
 

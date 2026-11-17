@@ -103,6 +103,16 @@ def _configure_array_mode(
     *,
     backend_settings: Optional[Dict[str, Any]] = None,
 ) -> None:
+    if mesh_source.body_ids is not None:
+        raise NotImplementedError(
+            "VarForm array mode does not support Python-side body_ids. "
+            "Use model selections, or put body tags in a mesh file."
+        )
+    if mesh_source.boundary_ids is not None:
+        raise NotImplementedError(
+            "VarForm array mode does not support Python-side boundary_ids. "
+            "Use model selections, or put boundary tags in a mesh file."
+        )
     settings_dict = (
         copy.deepcopy(backend_settings)
         if backend_settings is not None
@@ -112,21 +122,42 @@ def _configure_array_mode(
             mesh_source=mesh_source,
         )
     )
-    _apply_settings_json(solver, json.dumps(settings_dict))
-    _apply_mesh_array_mode(solver, mesh_source)
+    use_geometry_settings = _array_uses_geometry_settings(settings_dict)
+    if use_geometry_settings and not hasattr(solver, "set_settings_with_mesh"):
+        raise RuntimeError(
+            "This native backend cannot apply geometry selections to array meshes. "
+            "Install a matching package or rebuild the C++ backend using BUILD.md."
+        )
+    if use_geometry_settings:
+        solver.set_settings_with_mesh(json.dumps(settings_dict), mesh_source.vertices, mesh_source.cells)
+    else:
+        _apply_settings_json(solver, json.dumps(settings_dict))
+        _apply_mesh_array_mode(solver, mesh_source)
+
+
+def _array_uses_geometry_settings(settings: Dict[str, Any]) -> bool:
+    geometry = settings.get("geometry", [])
+    entries = [geometry] if isinstance(geometry, dict) else geometry
+    # Older array configurations use this entry only to satisfy the root schema.
+    if entries == [{"type": "ground", "height": 0.0, "enabled": True, "is_obstacle": False}]:
+        return False
+    if not entries:
+        return False
+    if not isinstance(entries, list) or not all(isinstance(entry, dict) for entry in entries):
+        raise ValueError("Array mesh geometry must be an object or a list of objects.")
+    enabled = [entry for entry in entries if entry.get("enabled", True)]
+    deformable = [entry for entry in enabled if not entry.get("is_obstacle", False)]
+    if len(deformable) != 1:
+        raise ValueError(
+            "An array mesh requires exactly one enabled deformable geometry entry. "
+            "Use solve(cfg=...) to load multiple meshes from files."
+        )
+    if deformable[0].get("type", "mesh") != "mesh":
+        raise ValueError("An array mesh requires a deformable geometry entry of type 'mesh'.")
+    return True
 
 
 def _apply_mesh_array_mode(solver, mesh_source: MeshSource) -> None:
-    if mesh_source.body_ids is not None:
-        raise NotImplementedError(
-            "VarForm array mode does not support Python-side body_ids. "
-            "Put body tags in the mesh/config before calling solve()."
-        )
-    if mesh_source.boundary_ids is not None:
-        raise NotImplementedError(
-            "VarForm array mode does not support Python-side boundary_ids. "
-            "Put boundary tags in the mesh/config before calling solve()."
-        )
     if not hasattr(solver, "set_mesh"):
         raise RuntimeError("Compiled VarForm Solver is missing set_mesh(...).")
 

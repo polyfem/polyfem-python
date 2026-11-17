@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "binding_wrapper.hpp"
+#include "array_mesh_resources.hpp"
 
 using namespace polyfem;
 
@@ -78,6 +79,29 @@ public:
   {
     init_globals(state_);
     state_.init(settings_from_python(settings), strict_validation);
+  }
+
+  void set_settings_with_mesh(const py::object &settings,
+                              const Eigen::MatrixXd &vertices,
+                              const Eigen::MatrixXi &cells)
+  {
+    init_globals(state_);
+    json args = settings_from_python(settings);
+    json &geometry = args["geometry"];
+    if (geometry.is_object()) geometry = json::array({geometry});
+    json *body = nullptr;
+    for (auto &entry : geometry)
+    {
+      if (!entry.value("enabled", true) || entry.value("is_obstacle", false)) continue;
+      if (body != nullptr || entry.value("type", std::string("mesh")) != "mesh")
+        throw std::invalid_argument("Array input requires one enabled deformable mesh.");
+      body = &entry;
+    }
+    if (body == nullptr) throw std::invalid_argument("Array input requires one enabled deformable mesh.");
+    (*body)["mesh"] = ArrayMeshResources::mesh_path();
+    const ArrayMeshResources resources(vertices, cells);
+    state_.init(args, resources, true);
+    state_.load_mesh();
   }
 
   std::string settings() const
@@ -236,6 +260,9 @@ void define_solver(py::module_ &m)
 {
   py::class_<PythonSolver>(m, "Solver")
       .def(py::init<>())
+      .def("set_settings_with_mesh", &PythonSolver::set_settings_with_mesh,
+           "load settings and an array mesh through the geometry loader",
+           py::arg("json"), py::arg("vertices"), py::arg("connectivity"))
       .def("settings", &PythonSolver::settings, "get solver settings as JSON text")
       .def(
           "set_settings",

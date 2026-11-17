@@ -64,6 +64,17 @@ The result is about `0.00011234568`. Each vertex row contains two coordinates
 for 2D or three for 3D; each cell row contains its vertex indices. Supply both
 arrays together. They take precedence over mesh files in `cfg`.
 
+For model selections, configure one deformable mesh with
+`model.mesh(mesh="array.msh")`, then pass the arrays to `solve`. The mesh path
+is replaced internally; no `array.msh` file is needed. Material and boundary
+IDs assigned by the model are preserved. Geometry transformations, refinement,
+and selections use the backend's existing geometry loader. Obstacles still
+read their configured resources. Multiple enabled deformable entries are
+rejected because one pair of arrays cannot identify their bodies.
+
+This requires a Python extension built with `set_settings_with_mesh` support.
+An older extension reports an error rather than ignoring the selections.
+
 ## Geometry
 
 | Method | Purpose |

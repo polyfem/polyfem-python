@@ -75,6 +75,7 @@ def prepare_generated_backend_payload(
     if resolved_root_path:
         _resolve_geometry_mesh_paths_in_place(backend, str(resolved_root_path))
         _resolve_collision_mesh_paths_in_place(backend, str(resolved_root_path))
+    _normalize_nonlinear_tolerance_names(backend)
     _restore_backend_payload_semantics(backend)
     return _drop_none(backend)
 
@@ -111,7 +112,7 @@ _LINE_SEARCH_GENERATED_DEFAULTS = {
 }
 
 _NONLINEAR_ADVANCED_GENERATED_DEFAULTS = {
-    "f_delta": 0.0,
+    "f_delta_tol": 0.0,
     "f_delta_step_tol": 100,
     "derivative_along_delta_x_tol": 0,
     "apply_gradient_fd": "None",
@@ -205,12 +206,27 @@ def _restore_nonlinear_solver_semantics(payload: Dict[str, Any]) -> None:
 
     advanced = nonlinear.get("advanced")
     if isinstance(advanced, dict):
-        _rename_key(advanced, "f_delta_tol", "f_delta")
         for key, default_value in _NONLINEAR_ADVANCED_GENERATED_DEFAULTS.items():
             if advanced.get(key) == default_value:
                 advanced.pop(key)
         if not advanced:
             nonlinear.pop("advanced")
+
+
+def _normalize_nonlinear_tolerance_names(payload: Dict[str, Any]) -> None:
+    """Accept the old f_delta name; an explicit f_delta_tol takes precedence."""
+    solver = payload.get("solver")
+    if not isinstance(solver, dict):
+        return
+    for settings in (solver, solver.get("augmented_lagrangian")):
+        if not isinstance(settings, dict):
+            continue
+        nonlinear = settings.get("nonlinear")
+        if not isinstance(nonlinear, dict):
+            continue
+        advanced = nonlinear.get("advanced")
+        if isinstance(advanced, dict):
+            _rename_key(advanced, "f_delta", "f_delta_tol")
 
 
 def _rename_key(payload: Dict[str, Any], old: str, new: str) -> None:
@@ -583,7 +599,9 @@ def build_canonical_solver_settings(
     if mesh_source.mode == "json":
         if full_json is None:
             raise ValueError("JSON mesh mode requires full_json settings")
-        return clean_json_for_cpp(process_json_config(full_json))
+        settings = process_json_config(full_json)
+        _normalize_nonlinear_tolerance_names(settings)
+        return clean_json_for_cpp(settings)
 
     settings = _payload_dict_or_raise(cfg, context="building array-mode backend settings")
 
@@ -599,6 +617,7 @@ def build_canonical_solver_settings(
         ]
 
     _promote_materials_to_list(settings, infer_type_from_pde=True)
+    _normalize_nonlinear_tolerance_names(settings)
     return clean_json_for_cpp(settings)
 
 

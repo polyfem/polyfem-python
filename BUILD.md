@@ -92,6 +92,24 @@ Check both `import polyfem` and `python -I -m polyfempy backend-info --require` 
 An editable install or a wheel assembled with an existing local binary does not
 verify a fresh native build of the release revision.
 
+## Build adapters
+
+The parent repository owns the Python extension build adapters in
+`cmake/recipes/polyfem.cmake` and `cmake/recipes/libigl.cmake`. They do not edit
+the PolyFEM submodule.
+
+The Python adapter disables the backend's interpreter-embedding setup, then
+links its target with `pybind11::module` and enables Python expressions.
+`POLYFEM_WITH_PYTHON=OFF` still disables Python expressions. Nanobind remains
+the binding library for the public extension.
+
+The libigl adapter uses the pinned dependency version and the patches shipped
+with PolyFEM. It applies them with `git apply`, without shell redirection or a
+separate `patch` program. Review this adapter when upgrading the PolyFEM pin.
+
+The adapter tests configure small CMake fixtures without downloading dependencies
+or compiling C++. They do not replace native build and installed-package checks.
+
 ## Source archives
 
 The source archive includes the binding sources, pinned PolyFEM sources,

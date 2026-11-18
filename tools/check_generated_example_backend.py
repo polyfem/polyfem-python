@@ -307,8 +307,8 @@ def load_test_metrics(source_json: Path) -> tuple[dict[str, float], float]:
     payload = _load_effective_source_payload(source_json)
     tests = payload.get("tests")
     if not isinstance(tests, dict):
-        return {}, 1e-8
-    tolerance = float(tests.get("margin", 1e-8))
+        return {}, 1e-5
+    tolerance = float(tests.get("margin", 1e-5))
     return _error_metrics(tests), tolerance
 
 
@@ -317,6 +317,7 @@ def compare_metric_maps(
     left: dict[str, float],
     right: dict[str, float],
     tolerance: float,
+    relative_to_reference: bool = False,
 ) -> list[MetricDiff]:
     keys = sorted(set(left) | set(right))
     rows: list[MetricDiff] = []
@@ -325,6 +326,9 @@ def compare_metric_maps(
             rows.append(MetricDiff(key, left.get(key, float("nan")), right.get(key, float("nan")), float("inf"), tolerance))
             continue
         diff = abs(left[key] - right[key])
+        if relative_to_reference:
+            # Match PolyFEM's verify_run.cpp, including its scale near zero.
+            diff /= max(abs(right[key]), 1e-5)
         rows.append(MetricDiff(key, left[key], right[key], diff, tolerance))
     return rows
 
@@ -542,9 +546,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             left=generated_metrics,
             right=test_metrics,
             tolerance=test_tolerance,
+            relative_to_reference=True,
         )
         generated_matches_tests = _print_rows(
-            "generated output vs source JSON tests:",
+            "generated output vs source JSON tests (relative error):",
             tests_rows,
         )
     else:

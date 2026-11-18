@@ -64,6 +64,35 @@ def test_compare_metric_maps_reports_pass_and_fail_rows():
     assert not by_key["err_h1"].passed
 
 
+def test_reference_comparison_uses_polyfem_default_margin_and_scale(tmp_path):
+    tool = _load_tool_module()
+    path = tmp_path / "scene.json"
+    reference = {"err_h1": 50.0, "err_l2": 0.01, "err_lp": 0.0}
+    path.write_text(json.dumps({"tests": reference}), encoding="utf-8")
+    expected, margin = tool.load_test_metrics(path)
+    actual = {"err_h1": 50.0001, "err_l2": 0.010001, "err_lp": 5e-11}
+
+    rows = tool.compare_metric_maps(
+        left=actual, right=expected, tolerance=margin, relative_to_reference=True
+    )
+    assert margin == 1e-5
+    assert {row.key: row.passed for row in rows} == {
+        "err_h1": True, "err_l2": False, "err_lp": True,
+    }
+
+
+def test_reference_comparison_respects_scene_margin_and_rejects_missing_metrics(tmp_path):
+    tool = _load_tool_module()
+    path = tmp_path / "scene.json"
+    path.write_text(json.dumps({"tests": {"err_l2": 0, "err_lp": 1, "margin": 1e-6}}))
+    expected, margin = tool.load_test_metrics(path)
+    rows = tool.compare_metric_maps(
+        left={"err_l2": 5e-11}, right=expected, tolerance=margin, relative_to_reference=True
+    )
+    assert len(rows) == 2
+    assert all(not row.passed for row in rows)
+
+
 def test_backend_tool_applies_polyfem_test_time_steps_to_tend_dt_config(tmp_path):
     tool = _load_tool_module()
 

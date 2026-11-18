@@ -1,6 +1,3 @@
-#include <geogram/basic/command_line.h>
-#include <geogram/basic/command_line_args.h>
-
 #include <stdexcept>
 
 #include "binding_wrapper.hpp"

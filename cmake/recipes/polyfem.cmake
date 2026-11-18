@@ -19,4 +19,22 @@ if(NOT EXISTS "${POLYFEMPY_POLYFEM_ROOT}/CMakeLists.txt")
     )
 endif()
 
-add_subdirectory("${POLYFEMPY_POLYFEM_ROOT}" "${CMAKE_BINARY_DIR}/polyfem")
+option(POLYFEM_WITH_PYTHON "Enable Python expressions in PolyFEM" ON)
+
+function(polyfempy_add_backend)
+    # The parent supplies extension linking instead of embedding an interpreter.
+    # Keep this override local so the user's cached option remains unchanged.
+    set(POLYFEM_WITH_PYTHON OFF)
+    add_subdirectory("${POLYFEMPY_POLYFEM_ROOT}" "${CMAKE_BINARY_DIR}/polyfem")
+endfunction()
+
+polyfempy_add_backend()
+
+if(POLYFEM_WITH_PYTHON)
+    find_package(Python3 COMPONENTS Interpreter Development.Module REQUIRED)
+    include("${POLYFEMPY_POLYFEM_ROOT}/cmake/recipes/pybind11.cmake")
+    target_link_libraries(polyfem PUBLIC pybind11::module)
+    target_compile_definitions(polyfem PUBLIC
+        POLYFEM_WITH_PYTHON
+        POLYFEM_PYTHON_EXECUTABLE="${Python3_EXECUTABLE}")
+endif()

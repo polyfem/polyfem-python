@@ -20,8 +20,18 @@ to the import path. Submodule tests run separately.
 The suite includes comparisons between classic example configurations and
 official JSON inputs. This forward branch does not require PyTorch.
 
-On a backend-free machine, the native smoke test is expected to skip. Windows
-also skips the tests for the non-Windows runtime branch. Check the reasons with
+When reviewing a new backend revision before rebuilding, exclude native solves:
+
+```sh
+python -m pytest tests --ignore=tests/test_backend_smoke.py --deselect=tests/test_array_mesh_selections.py::test_native_array_selections_match_a_file_solve -q -rs
+```
+
+This also runs the small CMake adapter fixtures without compiling C++ or
+downloading native dependencies. An existing local extension or installed wheel
+may belong to an older backend revision; it cannot validate the new source pin.
+
+The native smoke test skips unless you explicitly select a build as described
+below. Windows also skips the tests for the non-Windows runtime branch. Check the reasons with
 `-rs`; a skipped native test does not establish that the solver works.
 
 The generator has its own standalone suite. From `python-from-jse/`, run
@@ -54,9 +64,23 @@ cube metrics, then runs the three quick-start
 scripts. The beam mesh is copied from `examples/quickstart/beam.obj`; the check
 does not download it. An editable install is not accepted as a wheel validation.
 
-For a development install, `python -m pytest tests/test_backend_smoke.py -q`
-remains available. It may skip when the backend is absent; that is not release
-evidence.
+To check an existing native build, select the package root containing both
+`polyfempy/__init__.py` and its compiled extension. For example, with a Windows
+Python 3.11 build:
+
+```sh
+python -m pytest tests/test_backend_smoke.py --backend-package-dir build/lib.win-amd64-cpython-311 -q -s
+```
+
+Use the actual build directory for your platform and Python version. This
+option applies to the smoke test. It does not build or install anything.
+The test uses isolated child processes, verifies the package and native module
+paths, and prints the native binary's SHA-256. The solve must use the same
+binary as the initial check. A missing or unloadable selected build fails;
+the test does not fall back to another package. Without this option, it skips.
+
+The path and hash identify the binary being tested, not its PolyFEM commit.
+When checking a source-pin update, select the build made for that revision.
 
 ## Code checks
 

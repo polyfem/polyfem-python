@@ -19,6 +19,7 @@ if str(_REPO / "python") not in sys.path:
 
 from polyfempy.runtime._solve_contract import (  # noqa: E402
     generated_payload_from_config,
+    prepare_canonical_solve_input,
     prepare_generated_backend_payload,
 )
 
@@ -268,7 +269,97 @@ class GeneratedPayloadTests(unittest.TestCase):
         self.assertNotIn("norm_type", nonlinear)
         self.assertNotIn("max_iterations", nonlinear)
         self.assertEqual({"method": "RobustArmijo"}, nonlinear["line_search"])
-        self.assertEqual({"f_delta": 1e-5}, nonlinear["advanced"])
+        self.assertEqual({"f_delta_tol": 1e-5}, nonlinear["advanced"])
+
+    def test_prepare_payload_accepts_legacy_f_delta_without_mutating_input(self):
+        for augmented in (False, True):
+            with self.subTest(augmented=augmented):
+                solver = {"nonlinear": {"advanced": {"f_delta": 1e-5}}}
+                payload = {"solver": {"augmented_lagrangian": solver} if augmented else solver}
+                snapshot = copy.deepcopy(payload)
+
+                prepared = prepare_generated_backend_payload(payload)["solver"]
+                if augmented:
+                    prepared = prepared["augmented_lagrangian"]
+
+                self.assertEqual({"f_delta_tol": 1e-5}, prepared["nonlinear"]["advanced"])
+                self.assertEqual(snapshot, payload)
+
+    def test_prepare_payload_prefers_current_f_delta_tol_including_zero(self):
+        for value in (0.0, 2e-5):
+            with self.subTest(value=value):
+                payload = {"solver": {"nonlinear": {"advanced": {
+                    "f_delta": 1e-5, "f_delta_tol": value, "track_info": True,
+                }}}}
+
+                advanced = prepare_generated_backend_payload(payload)["solver"]["nonlinear"]["advanced"]
+
+                expected = {"track_info": True, "f_delta_tol": value}
+                if value == 0:
+                    expected.pop("f_delta_tol")
+                self.assertEqual(expected, advanced)
+
+    def test_prepare_payload_drops_zero_tolerance_default_for_both_names(self):
+        for key in ("f_delta", "f_delta_tol"):
+            with self.subTest(key=key):
+                payload = {"solver": {"nonlinear": {"advanced": {key: 0.0}}}}
+
+                prepared = prepare_generated_backend_payload(payload)
+
+                self.assertNotIn("advanced", prepared["solver"]["nonlinear"])
+
+    def test_model_solver_preserves_f_delta_tol_for_the_backend(self):
+        import polyfem
+
+        model = polyfem.model()
+        model.mesh(mesh="triangle.obj")
+        model.solver(nonlinear=polyfem.nonlinear(
+            advanced=polyfem.nonlinear_advanced(f_delta_tol=1e-5),
+        ))
+        cfg = model.config()
+        snapshot = cfg.as_dict()
+
+        canonical = prepare_canonical_solve_input(vertices=None, cells=None, cfg=cfg)
+
+        self.assertEqual(
+            {"f_delta_tol": 1e-5},
+            canonical.backend_settings["solver"]["nonlinear"]["advanced"],
+        )
+        self.assertEqual(snapshot, cfg.as_dict())
+
+    def test_dictionary_tolerance_names_for_file_and_array_meshes(self):
+        cases = (
+            ({"f_delta": 1e-5}, 1e-5),
+            ({"f_delta_tol": 1e-5}, 1e-5),
+            ({"f_delta": 1e-5, "f_delta_tol": 2e-5}, 2e-5),
+            ({"f_delta": 1e-5, "f_delta_tol": 0.0}, 0.0),
+        )
+        for advanced, expected in cases:
+            for augmented in (False, True):
+                for array_mesh in (False, True):
+                    with self.subTest(advanced=advanced, augmented=augmented, array_mesh=array_mesh):
+                        solver = {"nonlinear": {"advanced": dict(advanced, track_info=True)}}
+                        cfg: dict[str, object] = {
+                            "solver": {"augmented_lagrangian": solver} if augmented else solver,
+                        }
+                        vertices, cells = None, None
+                        if array_mesh:
+                            vertices, cells = [[0, 0], [1, 0], [0, 1]], [[0, 1, 2]]
+                        else:
+                            cfg["geometry"] = [{"mesh": "triangle.obj"}]
+                        snapshot = copy.deepcopy(cfg)
+
+                        settings = prepare_canonical_solve_input(
+                            vertices=vertices, cells=cells, cfg=cfg,
+                        ).backend_settings["solver"]
+                        if augmented:
+                            settings = settings["augmented_lagrangian"]
+
+                        self.assertEqual(
+                            {"f_delta_tol": expected, "track_info": True},
+                            settings["nonlinear"]["advanced"],
+                        )
+                        self.assertEqual(snapshot, cfg)
 
 
 if __name__ == "__main__":

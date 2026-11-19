@@ -33,6 +33,7 @@ project(AdapterTest NONE)
 # These rules are only needed by generators that require a language rule.
 # No build command is run.
 set(CMAKE_CXX_COMPILE_OBJECT "unused")
+set(CMAKE_CXX_CREATE_STATIC_LIBRARY "unused")
 set(CMAKE_CXX_ARCHIVE_CREATE "unused")
 set(CMAKE_CXX_ARCHIVE_FINISH "unused")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/recipes")

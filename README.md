@@ -1,36 +1,48 @@
-# polyfem-python
-![Build](https://github.com/polyfem/polyfem-python/workflows/Build/badge.svg)
+# PolyFEM for Python
 
+`polyfempy` provides model builders and Python bindings to the PolyFEM solver.
+`import polyfem` is an alias with the same public API.
 
-[![Anaconda-Server Badge](https://anaconda.org/conda-forge/polyfempy/badges/latest_release_date.svg)](https://anaconda.org/conda-forge/polyfempy)
-[![Anaconda-Server Badge](https://anaconda.org/conda-forge/polyfempy/badges/downloads.svg)](https://anaconda.org/conda-forge/polyfempy)
-[![Anaconda-Server Badge](https://anaconda.org/conda-forge/polyfempy/badges/platforms.svg)](https://anaconda.org/conda-forge/polyfempy)
-[![Anaconda-Server Badge](https://anaconda.org/conda-forge/polyfempy/badges/installer/conda.svg)](https://conda.anaconda.org/conda-forge)
+## Install
 
+From a checkout with its submodules initialized:
 
-
-
-The python bindings are in alpha. Expect a lot of API changes and possible bugs. Use at your own peril!
-
-<br/>
-I am making efforts to provide a simple python interface to Polyfem.
-
-For doing so I am maintaining  a *conda* package which can be easily installed [https://anaconda.org/conda-forge/polyfempy](https://anaconda.org/conda-forge/polyfempy).
-
-Note that the conda deployment is slow and this tutorial will follow the deployment version.
-
-If you hare in a hurry for the juicy latest feature you can clone the repository [Polyfem-python](https://github.com/polyfem/polyfem-python) and use `pip` to install:
+```sh
+python -m pip install .
 ```
-python setup.py install
-```
-and
-```
-python setup.py test
-```
-for testing.
 
-For python documentation [https://polyfem.github.io/python/](https://polyfem.github.io/python/).
+Pip handles dependencies, API generation, and compilation. For development,
+use `python -m pip install -e ".[dev]"`. See [BUILD.md](BUILD.md) for source-build
+requirements and [INSTALL.md](INSTALL.md) for wheel installation.
 
-For python jupyter notebook [https://polyfem.github.io/python_examples/](https://polyfem.github.io/python_examples/).
+## Run a simulation
 
-For full documentation see [https://polyfem.github.io/](https://polyfem.github.io/).
+```python
+import polyfempy as pf
+
+model = pf.model()
+body = model.mesh(mesh="part.msh")
+body.material(pf.neo_hookean(E=1000, nu=.3))
+body.surface_axis(axis="-x", position=0, relative=True).dirichlet(value=[0, 0])
+model.solver(linear=pf.linear(solver="Eigen::SimplicialLDLT"))
+result = pf.solve(model.config(rhs=[0, -1]))
+print(result.sol)
+```
+
+Supply a 2D mesh file at `part.msh`, or pass another path to `model.mesh()`.
+`result.sol` contains the raw finite-element solution; rows are not necessarily
+mesh vertices.
+
+See [API.md](API.md) for materials, selections, loads, and time settings, and
+[TESTING.md](TESTING.md) for validation commands.
+
+## Source layout
+
+- `python/polyfempy/solve.py`: configuration preparation, solving, and results.
+- `python/polyfempy/generated_api/`: generated model builders.
+- `python/polyfem/`: automatic alias for `polyfempy`.
+- `src/`: nanobind bindings to the native solver.
+- `cmake/recipes/`: CPM, nanobind, and PolyFEM integration.
+- `python-from-jse/`: pinned generator used during builds.
+- `polyfem-data/`: reference data; CPM fetches a pinned PolyFEM commit and nanobind release.
+- `tools/`: API generation and release checks.

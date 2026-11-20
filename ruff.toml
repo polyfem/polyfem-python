@@ -1,0 +1,13 @@
+# Ruff configuration for PolyFEM Python API
+
+line-length = 88
+target-version = "py310"
+extend-exclude = ["python/polyfempy/generated_api", "python-from-jse", "examples"]
+
+[lint]
+# Catch syntax errors, undefined names, and unused imports.
+select = ["E4", "E7", "E9", "F"]
+
+[lint.isort]
+known-first-party = ["polyfempy"]
+

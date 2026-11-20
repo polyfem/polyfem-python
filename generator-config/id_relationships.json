@@ -1,0 +1,128 @@
+[
+  {
+    "namespace": "volume",
+    "producer": "geometry[*].volume_selection",
+    "consumer": "boundary_conditions.rhs[*].id",
+    "builder_api": "body.rhs",
+    "status": "required"
+  },
+  {
+    "namespace": "volume",
+    "producer": "geometry[*].volume_selection",
+    "consumer": "materials[*].id",
+    "builder_api": "body.material",
+    "status": "required"
+  },
+  {
+    "namespace": "volume",
+    "producer": "geometry[*].volume_selection",
+    "consumer": "initial_conditions.velocity[*].id",
+    "builder_api": "body.velocity",
+    "status": "required"
+  },
+  {
+    "namespace": "volume",
+    "producer": "geometry[*].volume_selection",
+    "consumer": "initial_conditions.solution[*].id",
+    "builder_api": "body.solution",
+    "status": "required"
+  },
+  {
+    "namespace": "volume",
+    "producer": "geometry[*].volume_selection",
+    "consumer": "initial_conditions.acceleration[*].id",
+    "builder_api": "body.acceleration",
+    "status": "required"
+  },
+  {
+    "namespace": "volume",
+    "producer": "geometry[*].volume_selection",
+    "consumer": "space.discr_order[*].id",
+    "builder_api": "body.discr_order",
+    "status": "required"
+  },
+  {
+    "namespace": "surface",
+    "producer": "geometry[*].surface_selection",
+    "consumer": "boundary_conditions.dirichlet_boundary[*].id",
+    "builder_api": "surface.dirichlet",
+    "status": "required"
+  },
+  {
+    "namespace": "surface",
+    "producer": "geometry[*].surface_selection",
+    "consumer": "boundary_conditions.neumann_boundary[*].id",
+    "builder_api": "surface.neumann",
+    "status": "required"
+  },
+  {
+    "namespace": "surface",
+    "producer": "geometry[*].surface_selection",
+    "consumer": "boundary_conditions.normal_aligned_neumann_boundary[*].id",
+    "builder_api": "surface.normal_aligned_neumann",
+    "status": "required"
+  },
+  {
+    "namespace": "surface",
+    "producer": "geometry[*].surface_selection",
+    "consumer": "boundary_conditions.pressure_boundary[*].id",
+    "builder_api": "surface.pressure",
+    "status": "required"
+  },
+  {
+    "namespace": "surface",
+    "producer": "geometry[*].surface_selection",
+    "consumer": "boundary_conditions.pressure_cavity[*].id",
+    "builder_api": "surface.pressure_cavity",
+    "status": "required"
+  },
+  {
+    "namespace": "surface",
+    "producer": "geometry[*].surface_selection",
+    "consumer": "boundary_conditions.obstacle_displacements[*].id",
+    "builder_api": "surface.obstacle_displacement",
+    "status": "required"
+  },
+  {
+    "namespace": "point",
+    "producer": "geometry[*].point_selection",
+    "consumer": "boundary_conditions.dirichlet_boundary[*].id",
+    "builder_api": "point.dirichlet",
+    "status": "required"
+  },
+  {
+    "namespace": "point",
+    "producer": "geometry[*].point_selection",
+    "consumer": "boundary_conditions.neumann_boundary[*].id",
+    "builder_api": "point.neumann",
+    "status": "required"
+  },
+  {
+    "namespace": "point",
+    "producer": "geometry[*].point_selection",
+    "consumer": "boundary_conditions.normal_aligned_neumann_boundary[*].id",
+    "builder_api": "point.normal_aligned_neumann",
+    "status": "required"
+  },
+  {
+    "namespace": "point",
+    "producer": "geometry[*].point_selection",
+    "consumer": "boundary_conditions.pressure_boundary[*].id",
+    "builder_api": "point.pressure",
+    "status": "required"
+  },
+  {
+    "namespace": "point",
+    "producer": "geometry[*].point_selection",
+    "consumer": "boundary_conditions.pressure_cavity[*].id",
+    "builder_api": "point.pressure_cavity",
+    "status": "required"
+  },
+  {
+    "namespace": "point",
+    "producer": "geometry[*].point_selection",
+    "consumer": "boundary_conditions.obstacle_displacements[*].id",
+    "builder_api": "point.obstacle_displacement",
+    "status": "required"
+  }
+]

@@ -1,1 +1,2 @@
 cmake/* linguist-vendored
+*.msh -whitespace

@@ -1,61 +1,40 @@
-################################################################################
-# Check required CMake version
-set(REQUIRED_CMAKE_VERSION "3.14.0")
-cmake_minimum_required(VERSION ${REQUIRED_CMAKE_VERSION})
+cmake_minimum_required(VERSION 3.25)
+project(polyfempy LANGUAGES CXX)
 
-if(INPUT_POLYFEMPY_DATA_ROOT)
-    set(POLYFEMPY_DATA_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/${INPUT_POLYFEMPY_DATA_ROOT}/")
-else()
-    set(POLYFEMPY_DATA_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/data/")
-endif()
-if(NOT EXISTS ${POLYFEMPY_DATA_ROOT})
-    file(MAKE_DIRECTORY ${POLYFEMPY_DATA_ROOT})
-endif()
-
-project(polyfempy)
-################################################################################
-
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/recipes/")
-
-# Color output
-include(UseColors)
-
-# Prepend function
-include(PrependCurrentPath)
-
-# Extra warnings
-include(Warnings)
-
-# Use C++11/14
-include(CXXFeatures)
-
-# Sort projects inside the solution
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-
-# Generate position independent code by default
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/recipes")
 
-################################################################################
-# Polyfem library
-################################################################################
-
-# dependencies
+find_package(Python 3.10 COMPONENTS Interpreter Development.Module REQUIRED)
+if(NOT SKBUILD_STATE STREQUAL "sdist")
+    include(nanobind)
+endif()
 include(polyfem)
-include(pybind11)
-include(pybind11_json)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/python-from-jse/tools/generate_with_overrides.py")
+    execute_process(
+        COMMAND "${Python_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/generate_polyfem_api.py"
+                --polyfem-source-dir "${polyfem_SOURCE_DIR}"
+        COMMAND_ERROR_IS_FATAL ANY)
+elseif(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/python/polyfempy/generated_api/generated_api.py")
+    message(FATAL_ERROR "Initialize the generator submodule: git submodule update --init --recursive")
+endif()
+if(SKBUILD_STATE STREQUAL "sdist")
+    return()
+endif()
 
-#for testing purpose
-include(polyfem_data)
-
-################################################################################
-# Subdirectories
-################################################################################
-add_library(polyfempy MODULE src/binding.cpp src/raster.cpp)
-target_link_libraries(polyfempy PRIVATE polyfem::polyfem pybind11::module pybind11::json)
-
-set_target_properties(polyfempy PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}" SUFFIX "${PYTHON_MODULE_EXTENSION}")
-
-
-
-
+nanobind_add_module(polyfempy NB_STATIC src/binding.cpp)
+target_link_libraries(polyfempy PRIVATE polyfem::polyfem)
+install(TARGETS polyfempy LIBRARY DESTINATION polyfempy COMPONENT python
+                        RUNTIME DESTINATION polyfempy COMPONENT python)
+install(FILES
+    python-from-jse/generator/__init__.py
+    python-from-jse/generator/model_builder.py
+    python-from-jse/generator/id_relationships.py
+    python-from-jse/generator/selection_refs.py
+    DESTINATION polyfempy/generated_api/generator COMPONENT python)
+install(FILES "${polyfem_SOURCE_DIR}/LICENSE" DESTINATION polyfempy/licenses
+    RENAME PolyFEM.LICENSE COMPONENT python)
+install(FILES "${nanobind_SOURCE_DIR}/LICENSE" DESTINATION polyfempy/licenses
+    RENAME nanobind.LICENSE COMPONENT python)

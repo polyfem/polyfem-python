@@ -1,0 +1,79 @@
+[build-system]
+requires = ["scikit-build-core>=0.12"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "polyfempy"
+version = "0.8"
+description = "PolyFEM Python bindings"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE", "python-from-jse/LICENSE"]
+authors = [
+  { name = "Teseo Schneider" },
+]
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.23",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "build>=1",
+    "scikit-build-core>=0.12",
+    "ruff>=0.17.5,<0.18",
+]
+test = [
+    "pytest>=7.0",
+]
+[project.urls]
+Homepage = "https://polyfem.github.io/"
+Source = "https://github.com/polyfem/polyfem-python"
+Issues = "https://github.com/polyfem/polyfem-python/issues"
+
+[tool.scikit-build]
+minimum-version = "build-system.requires"
+cmake.version = ">=3.25"
+build-dir = "build/{wheel_tag}"
+build.targets = ["polyfempy"]
+build.tool-args = ["-j2"]
+install.components = ["python"]
+wheel.packages = ["python/polyfempy", "python/polyfem"]
+sdist.cmake = true
+sdist.include = ["python/polyfempy/generated_api/*.py", "python/polyfempy/generated_api/*_manifest.json"]
+sdist.exclude = [
+    ".github/**", "tests/**", "doc/**", "polyfem/**", "polyfem-data/**", "data*/**",
+    "examples/**", "python-from-jse/tests/**", "python-from-jse/generated/**",
+    "python-from-jse/examples/**",
+    "**/__pycache__/**", "**/*.pyc",
+    "sim.pvd", "step*.obj", "step*.vtu", "test.obj", "test*.vtu", "*.code-workspace",
+]
+
+[tool.scikit-build.cmake.define]
+CMAKE_POLICY_VERSION_MINIMUM = "3.5"
+POLYFEM_WITH_TESTS = false
+POLYFEM_WITH_MISO = false
+POLYFEM_PORTABLE_BUILD = true
+POLYSOLVE_WITH_SPECTRA = false
+POLYSOLVE_WITH_AMGCL = false
+POLYSOLVE_WITH_UMFPACK = false
+POLYSOLVE_WITH_MPI = false
+POLYSOLVE_WITH_HYPRE = false
+
+[[tool.scikit-build.overrides]]
+if.platform-system = "darwin"
+inherit.cmake.define = "append"
+cmake.define.POLYSOLVE_WITH_MKL = false
+cmake.define.POLYSOLVE_WITH_ACCELERATE = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-m 'not contact'"
+markers = ["contact: full native contact regression sweep (opt in with -m contact)"]

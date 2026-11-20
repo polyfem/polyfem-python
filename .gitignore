@@ -1,22 +1,107 @@
+# Build directories
 build/
+build_debug/
 build.nosync/
 bin/
 bin_rel/
-.vscode
+lib/
+out/
 dist/
-3rdparty*
+/wheelhouse/
+/conda-out/
+CMakeFiles/
+CPM_modules/
+_deps/
+msvc_*/
+x64/
+*.dir/
+Release/
+Debug/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+.eggs/
+.pytest_cache/
+.ruff_cache/
+.venv/
+.coverage
+htmlcov/
+
+# Generated Python API artifacts
+/python/polyfempy/generated_api/
+/python-from-jse/generated/
+
+# Local architecture/discussion notes
+/doc/
+/python/polyfempy/runtime/README.md
+
+# Local agent/build scratch
+.codex
+.codex_tmp/
+/Class-Generation-From-Json-main/
+/build_log.txt
+/FORWARD_REVIEW.md
+
+# Simulation output directories. Meshes and reference data may be tracked elsewhere.
+/results/
+/runs/
+/outputs/
+/sim.json
+/impact_stats.json
+
+# Slurm batch logs written at the repo root.
+/slurm_logs/
+
+# IDE
+.vscode/*
+.idea/
 *.sublime-workspace
-copy_lib
 *.sublime-project
 *.code-workspace
-__pycache__
-*.obj
-*.pyc
-*.vtu
-*.pvd
-*.egg-info
-*.so
-temp-plot.html
-data*
+.vs/
+*.swp
+*.swo
+*~
+
+# Dependencies (repo-root dirs only — avoids ignoring names like data_loader.py)
+/3rdparty/
+/data/
 *libTracyClient.*
+
+# Compiled binaries (Windows)
+*.dll
+*.pyd
+*.exe
+*.pdb
+*.ilk
+*.exp
+*.lib
+*.a
+# Note: nanobind.dll and TracyClient.dll in python/polyfempy/ are build artifacts
+
+# Cache
 .cache/
+.env
+env/
+venv/
+ENV/
+
+# Temporary files
+*.log
+*.tmp
+*.bak
+temp-plot.html
+copy_lib
+build_verbose.txt
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Local experiments
+/experiment/

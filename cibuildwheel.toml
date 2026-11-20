@@ -1,0 +1,15 @@
+[tool.cibuildwheel]
+build = "cp311-*"
+skip = "*-musllinux_*"
+build-frontend = "build"
+environment = { N_THREADS = "1" }
+test-command = [
+    "python -m pip check",
+    'python -I "{package}/tools/check_installed_package.py" --readme "{package}/README.md" --example "{package}/examples/quickstart/beam.py" --example "{package}/examples/quickstart/static_elasticity.py" --example "{package}/examples/quickstart/transient_elasticity.py"',
+]
+
+[tool.cibuildwheel.linux]
+manylinux-x86_64-image = "manylinux_2_28"
+
+[tool.cibuildwheel.macos]
+environment = { N_THREADS = "1", MACOSX_DEPLOYMENT_TARGET = "11.0" }

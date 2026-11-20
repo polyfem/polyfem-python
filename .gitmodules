@@ -1,0 +1,13 @@
+# Use the submodule commits recorded by the parent repository.
+[submodule "polyfem"]
+	path = polyfem
+	url = https://github.com/polyfem/polyfem.git
+[submodule "examples"]
+	path = examples
+	url = https://github.com/polyfem/python_data.git
+[submodule "polyfem-data"]
+	path = polyfem-data
+	url = https://github.com/polyfem/polyfem-data.git
+[submodule "python-from-jse"]
+	path = python-from-jse
+	url = https://github.com/polyfem/python-from-jse.git

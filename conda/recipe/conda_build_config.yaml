@@ -1,0 +1,8 @@
+c_compiler:
+  - vs2022  # [win]
+  - gcc     # [linux]
+  - clang   # [osx]
+cxx_compiler:
+  - vs2022  # [win]
+  - gxx     # [linux]
+  - clangxx # [osx]

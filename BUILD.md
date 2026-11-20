@@ -45,6 +45,8 @@ platform-specific extension suffix.
 The three recipes load CPM and fetch pinned nanobind and PolyFEM sources.
 Build defaults are declared in `pyproject.toml`. A small patch to the pinned
 backend fixes the libigl patch command and links Python as an extension.
+A second small patch lets the geometry loader accept in-memory mesh data, so
+array inputs use the same selections, transforms, and refinement as file inputs.
 Reference data is used by tests and needs no CMake setup. The backend submodule
 is no longer required.
 

@@ -63,7 +63,6 @@ def test_classic_examples_import_public_polyfem():
     for example in CLASSIC_EXAMPLES.glob("[23]D/*_generated_api.py"):
         lines = example.read_text(encoding="utf-8").splitlines()
         assert "import polyfem" in lines
-        assert "from polyfempy.runtime import solve" in lines
 
 
 def test_classic_examples_keep_solver_and_output_explicit():

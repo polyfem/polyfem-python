@@ -12,7 +12,7 @@ from typing import Any
 
 import pytest
 
-from polyfempy.runtime._solve_contract import prepare_canonical_solve_input
+from polyfempy.solve import _config
 from polyfempy.generated_api import generated_api as polyfem
 
 
@@ -510,19 +510,9 @@ def test_top_level_config_with_model_delegates_to_model_builder():
 
     assert top_level_config.as_dict() == builder_config.as_dict()
 
-    builder_canonical = prepare_canonical_solve_input(
-        vertices=None,
-        cells=None,
-        cfg=builder_config,
-        dtype=None,
-    )
-    top_level_canonical = prepare_canonical_solve_input(
-        vertices=None,
-        cells=None,
-        cfg=top_level_config,
-        dtype=None,
-    )
-    assert top_level_canonical.backend_settings == builder_canonical.backend_settings
+    builder_canonical = _config(builder_config)
+    top_level_canonical = _config(top_level_config)
+    assert top_level_canonical == builder_canonical
 
 
 def test_top_level_body_mesh_and_model_rhs_match_legacy_builder_payload():
@@ -545,19 +535,9 @@ def test_top_level_body_mesh_and_model_rhs_match_legacy_builder_payload():
     assert config.as_dict() == legacy_config.as_dict()
     assert mesh_descriptor.as_dict() == mesh_payload_before_attach
 
-    legacy_canonical = prepare_canonical_solve_input(
-        vertices=None,
-        cells=None,
-        cfg=legacy_config,
-        dtype=None,
-    )
-    canonical = prepare_canonical_solve_input(
-        vertices=None,
-        cells=None,
-        cfg=config,
-        dtype=None,
-    )
-    assert canonical.backend_settings == legacy_canonical.backend_settings
+    legacy_canonical = _config(legacy_config)
+    canonical = _config(config)
+    assert canonical == legacy_canonical
 
 
 def test_model_rhs_rejects_duplicate_rhs_sources():
@@ -806,7 +786,9 @@ def _import_example(example_path: Path) -> Any:
     spec = importlib.util.spec_from_file_location(example_path.stem, example_path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    # Adapt the import in the pinned external fixtures to the current public API.
+    source = example_path.read_text().replace("from polyfempy.runtime import solve", "from polyfempy import solve")
+    exec(compile(source, str(example_path), "exec"), module.__dict__)
     return module
 
 
@@ -1120,15 +1102,10 @@ def test_dolphin_generated_backend_payload_keeps_source_materials_shape(
     source_config = _load_source_config(source_path)
     example = _import_example(example_path)
 
-    canonical = prepare_canonical_solve_input(
-        vertices=None,
-        cells=None,
-        cfg=example.polyfem_config,
-        dtype=None,
-    )
+    canonical = _config(example.polyfem_config)
 
     assert isinstance(source_config["materials"], dict)
-    assert canonical.backend_settings["materials"] == source_config["materials"]
+    assert canonical["materials"] == source_config["materials"]
 
 
 def test_classic_generated_api_fallbacks_are_limited_to_known_schema_gaps():
@@ -1147,29 +1124,17 @@ def test_classic_generated_example_uses_generated_solve_path(case: tuple[Path, P
     example_path, _source_path = case
     example = _import_example(example_path)
 
-    canonical = prepare_canonical_solve_input(
-        vertices=None,
-        cells=None,
-        cfg=example.polyfem_config,
-        dtype=None,
-    )
+    canonical = _config(example.polyfem_config)
 
-    assert canonical.metadata == {"mesh_source": "json", "config_source": "generated"}
-    assert canonical.mesh_source.mode == "json"
-    assert "geometry" in canonical.backend_settings
+    assert "geometry" in canonical
 
 
 def test_all_classic_generated_examples_use_generated_solve_path():
     failures = []
     for example_path, _source_path in _all_example_cases():
         example = _import_example(example_path)
-        canonical = prepare_canonical_solve_input(
-            vertices=None,
-            cells=None,
-            cfg=example.polyfem_config,
-            dtype=None,
-        )
-        if canonical.metadata != {"mesh_source": "json", "config_source": "generated"}:
+        canonical = _config(example.polyfem_config)
+        if not canonical.get("geometry"):
             failures.append(example_path.relative_to(ROOT).as_posix())
 
     assert failures == []

@@ -1,6 +1,8 @@
 # Forward API
 
-For a complete NumPy example, see the [README](README.md#run-a-simulation).
+Both `import polyfempy` and `import polyfem` expose this API.
+
+For a complete example, see the [README](README.md#run-a-simulation).
 This guide shows API patterns. Supply your own mesh paths; `part.msh` below
 must be a 2D mesh. Later snippets are alternatives, not one script to run in
 sequence. They assume `import polyfempy as polyfem` and a fresh `model` with the named bodies.
@@ -35,45 +37,6 @@ result = solve(cfg="simulation.json")
 By default, relative mesh paths in that file are resolved from the JSON file's
 directory. Relative paths in a model or dictionary use the working directory
 unless you set `root_path`.
-
-## Use an array mesh
-
-Pass vertex coordinates and zero-based cell indices directly to `solve` when
-the mesh is already in Python. This complete example needs no mesh file:
-
-```python
-import numpy as np
-from polyfempy import solve
-
-vertices = np.array([[0, 0], [1, 0], [1, 1], [0, 1], [0.5, 0.5]])
-cells = np.array([[0, 1, 4], [1, 2, 4], [2, 3, 4], [3, 0, 4]])
-config = {
-    "materials": {"type": "NeoHookean", "E": 1000, "nu": 0.3},
-    "boundary_conditions": {
-        "dirichlet_boundary": [{"id": "all", "value": [0, 0]}],
-        "rhs": [0, -1],
-    },
-    "solver": {"linear": {"solver": "Eigen::SimplicialLDLT"}},
-}
-
-result = solve(vertices, cells, cfg=config)
-print(f"Largest displacement component: {abs(result.sol).max():.8g}")
-```
-
-The result is about `0.00011234568`. Each vertex row contains two coordinates
-for 2D or three for 3D; each cell row contains its vertex indices. Supply both
-arrays together. They take precedence over mesh files in `cfg`.
-
-For model selections, configure one deformable mesh with
-`model.mesh(mesh="array.msh")`, then pass the arrays to `solve`. The mesh path
-is replaced internally; no `array.msh` file is needed. Material and boundary
-IDs assigned by the model are preserved. Geometry transformations, refinement,
-and selections use the backend's existing geometry loader. Obstacles still
-read their configured resources. Multiple enabled deformable entries are
-rejected because one pair of arrays cannot identify their bodies.
-
-This requires a Python extension built with `set_settings_with_mesh` support.
-An older extension reports an error rather than ignoring the selections.
 
 ## Geometry
 
@@ -192,8 +155,8 @@ is the raw finite-element solution array; its rows are not necessarily mesh
 vertices. Open the saved `.pvd` file in ParaView to view the result on the mesh.
 
 `result.sol` is a NumPy array. For a transient simulation, it contains the final
-state; use the saved output files for earlier time steps. `result.meta` contains
-backend metadata, whose keys may depend on the solve.
+state; use the saved output files for earlier time steps. `result.meta` starts
+as an empty dictionary.
 
 ## Model settings
 

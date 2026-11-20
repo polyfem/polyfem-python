@@ -10,10 +10,7 @@ import zipfile
 
 
 PACKAGE_FILES = {
-    "polyfempy/__init__.py", "polyfempy/runtime/solve.py",
-    "polyfempy/runtime/result.py", "polyfempy/runtime/_solve_contract.py",
-    "polyfempy/runtime/__init__.py", "polyfempy/runtime/_solve_backend.py",
-    "polyfempy/runtime/tensor.py",
+    "polyfem/__init__.py", "polyfempy/__init__.py", "polyfempy/solve.py",
     "polyfempy/generated_api/__init__.py",
     "polyfempy/generated_api/generated_api.py",
     "polyfempy/generated_api/generated_class.py",
@@ -27,12 +24,11 @@ SOURCE_FILES = {
     "src/binding.cpp",
     "python-from-jse/LICENSE",
     "tools/check_installed_package.py",
-    "src/CMakeLists.txt", "src/binding_wrapper.hpp", "src/state/CMakeLists.txt",
-    "src/state/state.cpp", "src/state/binding.hpp", "src/state/array_mesh_resources.hpp",
     "cmake/recipes/CPM.cmake",
     "cmake/recipes/nanobind.cmake",
     "cmake/recipes/polyfem.cmake",
     "cmake/patches/polyfem.patch",
+    "cmake/patches/array_mesh.patch",
     "tools/generate_polyfem_api.py", "generator-config/api_aliases.json",
     "generator-config/id_relationships.json",
 }

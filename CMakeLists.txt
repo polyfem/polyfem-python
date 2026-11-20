@@ -24,9 +24,7 @@ if(SKBUILD_STATE STREQUAL "sdist")
     return()
 endif()
 
-nanobind_add_module(polyfempy NB_STATIC)
-add_subdirectory(src)
-target_include_directories(polyfempy PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+nanobind_add_module(polyfempy NB_STATIC src/binding.cpp)
 target_link_libraries(polyfempy PRIVATE polyfem::polyfem)
 install(TARGETS polyfempy LIBRARY DESTINATION polyfempy COMPONENT python
                         RUNTIME DESTINATION polyfempy COMPONENT python)

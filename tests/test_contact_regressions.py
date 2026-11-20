@@ -8,7 +8,7 @@ import sys
 
 import pytest
 
-from polyfempy.runtime._solve_contract import prepare_generated_backend_payload
+from polyfempy.solve import _config
 from test_generated_api_example import _all_example_cases, _import_example, _load_source_config
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -47,7 +47,7 @@ for label in ('generated', 'source'):
         solver = Solver()
         solver.set_settings(json.dumps(payload), strict_validation=True)
         solver.load_mesh_from_settings()
-        solver.solve(log_level=4)
+        solver.solve()
 """
 
 
@@ -64,7 +64,7 @@ def test_contact_api_matches_source_json(case, tmp_path):
     reference = _load_source_config(source)
     steps = json.loads(source.read_text()).get("tests", {}).get("time_steps", 1)
     for label, payload in (("generated", generated), ("source", reference)):
-        payload = prepare_generated_backend_payload(payload, root_path=str(source))
+        payload = _config(dict(payload, root_path=str(source)))
         time = payload.get("time")
         if time:
             dt = time.get("dt")

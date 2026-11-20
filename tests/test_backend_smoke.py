@@ -54,7 +54,7 @@ if len(sys.argv) > 3:
     solver = native.Solver()
     solver.set_settings(json.dumps(payload), strict_validation=True)
     solver.load_mesh_from_settings()
-    solver.solve(log_level=2)
+    solver.solve()
 """
 
 

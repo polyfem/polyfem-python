@@ -32,25 +32,24 @@ def test_unsupported_callback_fails_before_loading_backend():
     import pytest
     from polyfempy import solve
 
-    with pytest.raises(NotImplementedError, match="sidesets_func"):
+    with pytest.raises(TypeError, match="sidesets_func"):
         solve(sidesets_func=lambda *_: 1)
 
 
 def test_public_api_imports():
-    from polyfempy.runtime import Result, solve
+    from polyfempy import Result, solve
 
     assert solve is not None
     assert Result is not None
 
 
-def test_runtime_imports_are_the_preferred_solve_surface():
-    import polyfempy.runtime as runtime
-    from polyfempy.runtime import Result, solve
+def test_polyfem_is_an_automatic_alias():
+    import polyfem
+    import polyfempy
 
-    assert runtime.CORE_RUNTIME == ["solve", "Result"]
-    assert runtime.__all__ == runtime.CORE_RUNTIME
-    assert solve is not None
-    assert Result is not None
+    assert polyfem.__all__ == polyfempy.__all__
+    for name in polyfempy.__all__:
+        assert getattr(polyfem, name) is getattr(polyfempy, name)
 
 
 def test_generated_api_package_is_the_preferred_generated_surface():
@@ -58,25 +57,6 @@ def test_generated_api_package_is_the_preferred_generated_surface():
     from polyfempy.generated_api import generated_class
 
     assert polyfem.Root is generated_class.Root
-
-
-def test_runtime_recommended_surface_is_small():
-    import polyfempy.runtime as runtime
-
-    assert runtime.CORE_RUNTIME == ["solve", "Result"]
-    assert runtime.__all__ == runtime.CORE_RUNTIME
-
-    for name in (
-        "SimulationConfig",
-        "Output",
-        "ParaviewOutput",
-        "result_output",
-        "solve_with_timing",
-        "configure_windows_runtime",
-        "batch_solve",
-        "HistoryView",
-    ):
-        assert not hasattr(runtime, name)
 
 
 def test_legacy_api_and_generated_packages_are_removed():
@@ -94,9 +74,9 @@ def test_solve_module_all_only_recommends_solve():
     import importlib
     import inspect
 
-    solve_module = importlib.import_module("polyfempy.runtime.solve")
+    solve_module = importlib.import_module("polyfempy.solve")
 
-    assert solve_module.__all__ == ["solve"]
+    assert solve_module.__all__ == ["Result", "solve"]
     assert "sampled_vtu_fallback" not in inspect.signature(solve_module.solve).parameters
     assert not hasattr(solve_module, "populate_sampled_history")
 

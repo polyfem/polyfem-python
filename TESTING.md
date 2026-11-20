@@ -12,11 +12,10 @@ The normal installation generates the configuration API automatically. After
 changing schemas or generator configuration, regenerate it by
 reinstalling the project.
 
-Python tests cover configuration normalization, model selection IDs, array
-validation, and solver dispatch. Native array-selection tests run when the
-extension is available. Reference examples require the pinned `examples` and
-`polyfem-data` submodules. Their historical import name is adapted only inside
-tests; the installed public package is `polyfempy`.
+Python tests cover configuration loading, model selection IDs, and solver
+dispatch. Native file-mesh tests run when the extension is available. Reference examples require the pinned `examples` and
+`polyfem-data` submodules. Both `polyfempy` and its `polyfem` alias are installed
+and expose the same public API.
 
 To test an installed wheel outside the source directory:
 
@@ -24,8 +23,8 @@ To test an installed wheel outside the source directory:
 python tools/check_installed_package.py
 ```
 
-This checks imports and compares a file-mesh solve with the equivalent NumPy
-array solve, including material and boundary selections.
+This checks both public imports and runs file-mesh solves with constant and
+Python-function loads, including material and boundary selections.
 
 For a selected existing native build and its reference data:
 

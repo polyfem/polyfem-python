@@ -1,43 +1,33 @@
-"""Generated and JSON configurations resolve the same resource paths."""
+"""PolyFEM resolves mesh and selection resources from the JSON file's directory."""
 
-import copy
+import json
 
+import numpy as np
 import pytest
 
-from polyfempy.runtime._solve_contract import (
-    prepare_generated_backend_payload,
-    process_json_config,
-)
+from polyfempy import solve
 
 
-@pytest.mark.parametrize("prepare", [process_json_config, prepare_generated_backend_payload])
 @pytest.mark.parametrize("geometry_list", [False, True])
-def test_resource_paths_are_relative_to_config(tmp_path, prepare, geometry_list):
-    resources = ["beam.msh", "volume.txt", "surface.txt", "point.txt", "proxy.ply", "map.hdf5"]
-    for name in resources:
-        (tmp_path / name).touch()
-    geometry = {
-        "mesh": "beam.msh",
-        "volume_selection": "volume.txt",
-        "surface_selection": {"file": "surface.txt"},
-        "point_selection": [{"file": "point.txt"}],
-    }
-    payload = {
-        "root_path": str(tmp_path / "config.json"),
+def test_backend_resolves_config_resources(tmp_path, monkeypatch, geometry_list):
+    pytest.importorskip("polyfempy.polyfempy")
+    config_dir = tmp_path / "inputs"
+    config_dir.mkdir()
+    (config_dir / "square.obj").write_text(
+        "v 0 0 0\nv 1 0 0\nv 1 1 0\nv 0 1 0\nv .5 .5 0\n"
+        "f 1 2 5\nf 2 3 5\nf 3 4 5\nf 4 1 5\n")
+    (config_dir / "volume.txt").write_text("1\n1\n1\n1\n")
+    geometry = {"mesh": "square.obj", "volume_selection": "volume.txt"}
+    cfg = {
         "geometry": [geometry] if geometry_list else geometry,
-        "contact": {"collision_mesh": {"mesh": "proxy.ply", "linear_map": "map.hdf5"}},
+        "materials": [{"id": 1, "type": "NeoHookean", "E": 1000, "nu": 0.3}],
+        "boundary_conditions": {"dirichlet_boundary": [{"id": "all", "value": [0, 0]}], "rhs": [0, -1]},
+        "solver": {"linear": {"solver": "Eigen::SimplicialLDLT"}},
+        "output": {"log": {"level": "off", "path": ""}},
     }
-    original = copy.deepcopy(payload)
-
-    prepared = prepare(payload)
-
-    assert payload == original
-    resolved = prepared["geometry"][0] if geometry_list else prepared["geometry"]
-    assert resolved["mesh"] == str(tmp_path / "beam.msh")
-    assert resolved["volume_selection"] == str(tmp_path / "volume.txt")
-    assert resolved["surface_selection"]["file"] == str(tmp_path / "surface.txt")
-    assert resolved["point_selection"][0]["file"] == str(tmp_path / "point.txt")
-    assert prepared["contact"]["collision_mesh"] == {
-        "mesh": str(tmp_path / "proxy.ply"),
-        "linear_map": str(tmp_path / "map.hdf5"),
-    }
+    path = config_dir / "simulation.json"
+    path.write_text(json.dumps(cfg))
+    monkeypatch.chdir(tmp_path)
+    result = solve(cfg=path)
+    assert np.isfinite(result.sol).all()
+    assert abs(result.sol).max() > 1e-6

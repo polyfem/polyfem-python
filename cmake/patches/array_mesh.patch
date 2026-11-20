@@ -1,0 +1,72 @@
+--- a/src/polyfem/State.hpp
++++ b/src/polyfem/State.hpp
+@@ -2,6 +2,7 @@
+ 
+ #include <polyfem/Common.hpp>
+ #include <polyfem/io/ResourceIO.hpp>
++#include <polyfem/mesh/MeshData.hpp>
+ #include <polyfem/utils/Types.hpp>
+ 
+ #include <Eigen/Dense>
+@@ -110,7 +111,7 @@
+ 
+ 		/// loads the mesh from the json arguments
+ 		/// @param[in] non_conforming creates a conforming/non conforming mesh
+-		void load_mesh(bool non_conforming = false);
++		void load_mesh(bool non_conforming = false, const mesh::MeshData *array_mesh = nullptr);
+ 
+ 		/// loads the mesh from V and F,
+ 		/// @param[in] V is #vertices x dim
+--- a/src/polyfem/State.cpp
++++ b/src/polyfem/State.cpp
+@@ -431,7 +431,7 @@
+ 		NThread::get().set_num_threads(max_threads);
+ 	}
+ 
+-	void State::load_mesh(const bool non_conforming)
++	void State::load_mesh(const bool non_conforming, const mesh::MeshData *array_mesh)
+ 	{
+ 		igl::Timer timer;
+ 		timer.start();
+@@ -440,7 +440,7 @@
+ 		assert(is_param_valid(args, "geometry"));
+ 		Units units;
+ 		units.init(args["units"]);
+-		mesh::GeometryLoader geometry_loader(units, *resources_);
++		mesh::GeometryLoader geometry_loader(units, *resources_, array_mesh);
+ 		const auto obstacle_displacements = utils::json_as_array(args["boundary_conditions"]["obstacle_displacements"]);
+ 		const auto dirichlet_conditions = utils::json_as_array(args["boundary_conditions"]["dirichlet_boundary"]);
+ 		mesh::LoadedGeometry loaded_geometry;
+--- a/src/polyfem/mesh/GeometryLoader.hpp
++++ b/src/polyfem/mesh/GeometryLoader.hpp
+@@ -21,8 +21,8 @@
+ 	class GeometryLoader
+ 	{
+ 	public:
+-		GeometryLoader(Units units, const io::ResourceIO &resources)
+-			: units_(std::move(units)), resources_(resources) {}
++		GeometryLoader(Units units, const io::ResourceIO &resources, const MeshData *array_mesh = nullptr)
++			: units_(std::move(units)), resources_(resources), array_mesh_(array_mesh) {}
+ 
+ 		LoadedGeometry load(
+ 			const json &geometry,
+@@ -66,5 +66,6 @@
+ 	private:
+ 		Units units_;
+ 		const io::ResourceIO &resources_;
++		const MeshData *array_mesh_;
+ 	};
+ } // namespace polyfem::mesh
+--- a/src/polyfem/mesh/GeometryLoader.cpp
++++ b/src/polyfem/mesh/GeometryLoader.cpp
+@@ -82,7 +82,9 @@
+ 		if (j_mesh["extract"].get<std::string>() != "volume")
+ 			log_and_throw_error("Only volumetric elements are implemented for FEM meshes!");
+ 
+-		std::unique_ptr<Mesh> mesh = MeshLoader(resources_).load_fem(j_mesh["mesh"].get<std::string>(), non_conforming);
++		std::unique_ptr<Mesh> mesh = array_mesh_
++			? Mesh::create(*array_mesh_, non_conforming)
++			: MeshLoader(resources_).load_fem(j_mesh["mesh"].get<std::string>(), non_conforming);
+ 		// --------------------------------------------------------------------
+ 
+ 		// NOTE: Normaliziation is done before transformations are applied and/or any selection operators

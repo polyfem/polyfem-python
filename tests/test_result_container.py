@@ -8,16 +8,16 @@ import numpy as np
 
 _REPO = Path(__file__).resolve().parents[1]
 
-from polyfempy.runtime.result import Result  # noqa: E402
+from polyfempy import Result  # noqa: E402
 
 
 def test_result_stores_raw_backend_solution_and_meta():
     sol = np.array([[0.0, 0.0], [0.1, 0.0], [0.0, 0.1]])
 
-    result = Result(sol, meta={"from_bundle": True})
+    result = Result(sol, meta={"case": "example"})
 
     np.testing.assert_array_equal(result.sol, sol)
-    assert result.meta == {"from_bundle": True}
+    assert result.meta == {"case": "example"}
     assert not hasattr(result, "vertices")
     assert not hasattr(result, "cells")
     assert not hasattr(result, "p")

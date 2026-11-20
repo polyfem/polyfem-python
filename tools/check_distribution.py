@@ -27,8 +27,6 @@ SOURCE_FILES = {
     "cmake/recipes/CPM.cmake",
     "cmake/recipes/nanobind.cmake",
     "cmake/recipes/polyfem.cmake",
-    "cmake/patches/polyfem.patch",
-    "cmake/patches/array_mesh.patch",
     "tools/generate_polyfem_api.py", "generator-config/api_aliases.json",
     "generator-config/id_relationships.json",
 }

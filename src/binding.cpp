@@ -17,15 +17,7 @@ NB_MODULE(polyfempy, m)
         .def("set_settings", [](State &state, const std::string &settings, bool strict) {
             state.init(json::parse(settings), strict);
         }, "json"_a, "strict_validation"_a = false)
-        .def("set_settings_with_mesh", [](State &state, const std::string &settings,
-                                         const Eigen::MatrixXd &vertices, const Eigen::MatrixXi &cells) {
-            state.init(json::parse(settings), true);
-            const mesh::MeshData mesh(vertices, cells);
-            state.load_mesh(false, &mesh);
-        }, "json"_a, "vertices"_a, "connectivity"_a)
         .def("load_mesh_from_settings", [](State &state) { state.load_mesh(); })
-        .def("set_mesh", &State::set_mesh,
-             "vertices"_a, "connectivity"_a, "non_conforming"_a = false)
         .def("solve", [](State &state) {
             Eigen::MatrixXd sol;
             {

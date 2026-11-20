@@ -44,5 +44,5 @@ See [API.md](API.md) for materials, selections, loads, and time settings, and
 - `src/`: nanobind bindings to the native solver.
 - `cmake/recipes/`: CPM, nanobind, and PolyFEM integration.
 - `python-from-jse/`: pinned generator used during builds.
-- `polyfem-data/`: reference data; CPM fetches the pinned backend and nanobind sources.
+- `polyfem-data/`: reference data; CPM fetches a pinned PolyFEM commit and nanobind release.
 - `tools/`: API generation and release checks.

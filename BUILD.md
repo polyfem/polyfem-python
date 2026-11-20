@@ -37,16 +37,14 @@ python tools/check_distribution.py "dist/*.tar.gz" "dist/*.whl"
 ```
 
 The `build` frontend is included in the development extra. Source archives
-contain the generator and generated API; CPM fetches pinned backend sources. CMake installs
+contain the generator and generated API; CPM fetches the pinned PolyFEM sources. CMake installs
 only the extension and the builder runtime into wheels; build-time schema tools
 stay in the build directory. Nanobind supplies NumPy/Eigen conversion and the
 platform-specific extension suffix.
 
-The three recipes load CPM and fetch pinned nanobind and PolyFEM sources.
-Build defaults are declared in `pyproject.toml`. A small patch to the pinned
-backend fixes the libigl patch command and links Python as an extension.
-A second small patch lets the geometry loader accept in-memory mesh data, so
-array inputs use the same selections, transforms, and refinement as file inputs.
+The three recipes load CPM and fetch nanobind and PolyFEM sources. PolyFEM pins
+a commit from upstream `main` without local patches; nanobind uses a pinned release.
+Build defaults are declared in `pyproject.toml`.
 Reference data is used by tests and needs no CMake setup. The backend submodule
 is no longer required.
 

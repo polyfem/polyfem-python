@@ -239,6 +239,16 @@ def render_builder_config(payload: dict[str, Any]) -> str | None:
             if isinstance(item, dict) and isinstance(item.get("id"), int):
                 boundary_ids.add(item["id"])
     conditions = payload.get("boundary_conditions", {})
+    rhs = conditions.get("rhs")
+    # A mesh with file-defined tags can overlap a different mesh's explicit ID.
+    # Keep the source's global RHS when it mixes the two tagging schemes.
+    volume_tag_modes = {"volume_selection" in item for item in geometry if not item.get("is_obstacle")}
+    use_body_rhs = (
+        isinstance(rhs, list)
+        and bool(rhs)
+        and all(isinstance(component, (int, float)) for component in rhs)
+        and len(volume_tag_modes) == 1
+    )
     obstacle_targets = [
         entry.get("id") for key in ("dirichlet_boundary", "obstacle_displacements")
         for entry in normalize_optional_items(conditions.get(key)) if isinstance(entry, dict)
@@ -327,7 +337,8 @@ def render_builder_config(payload: dict[str, Any]) -> str | None:
             mesh_kwargs.append(("surface_selection", "0"))
         if volume_id in volume_body_by_id and item_type == "mesh":
             mesh_kwargs.append(("same_volume_as", volume_body_by_id[volume_id]))
-        if is_obstacle or not isinstance(volume_id, int) or volume_id <= 0:
+        write_body_rhs = use_body_rhs and not is_obstacle and volume_id not in volume_body_by_id
+        if is_obstacle or not has_volume_handle:
             call = render_method_call(
                 "model",
                 method,
@@ -342,7 +353,7 @@ def render_builder_config(payload: dict[str, Any]) -> str | None:
                     lines.extend(assign_code(handle_var, call))
                 else:
                     lines.extend((call + ".surface_all()").splitlines())
-            elif not is_obstacle and needs_geometry_handle:
+            elif not is_obstacle and (needs_geometry_handle or write_body_rhs):
                 lines.extend(assign_code(body_var, call))
             else:
                 lines.extend(call.splitlines())
@@ -361,11 +372,14 @@ def render_builder_config(payload: dict[str, Any]) -> str | None:
             )
             if assign_whole_surface:
                 lines.append(f"{body_var}.surface_all()")
-            volume_body_by_id.setdefault(volume_id, body_var)
-
             if volume_id in material_by_id:
                 material_var = material_by_id[volume_id]["variable"]
                 lines.extend(render_method_call(body_var, "material", [material_var], [], 0).splitlines())
+            volume_body_by_id.setdefault(volume_id, body_var)
+
+        if write_body_rhs:
+            fields = [("value", render_literal(rhs, 4))]
+            lines.extend(render_method_call(body_var, "rhs", [], fields, 0).splitlines())
 
         selection_owner = body_var
         if is_obstacle:
@@ -445,12 +459,22 @@ def render_builder_config(payload: dict[str, Any]) -> str | None:
     for key, value in payload.items():
         if key in consumed_top_sections:
             continue
-        config_kwargs.append(
-            (keyword_name(key), render_field_value(polyfem.Root, key, value, 4))
-        )
-    if config_rhs is not None:
-        config_kwargs.append(("rhs", render_literal(config_rhs, 4)))
+        if key == "materials":
+            items = [render_material_item(item, 8) for item in normalize_optional_items(value)]
+            fields = [("items", render_code_list(items, 4))]
+        elif key in ("time", "contact", "solver", "output", "space") and isinstance(value, dict):
+            _, section = polyfem._FIELD_WRAPPERS[polyfem.Root][key]
+            if key == "time":
+                section = polyfem._select_variant(value, polyfem._POLYMORPHIC_VARIANTS[section])
+            fields = render_kwargs(section, value, 4)
+        else:
+            config_kwargs.append((keyword_name(key), render_field_value(polyfem.Root, key, value, 4)))
+            continue
+        lines.extend(render_method_call("model", key, [], fields, 0).splitlines())
+    if config_rhs is not None and not use_body_rhs:
+        lines.extend(render_method_call("model", "rhs", [render_literal(config_rhs, 4)], [], 0).splitlines())
 
+    lines.append("")
     lines.extend(
         assign_code(
             "polyfem_config",

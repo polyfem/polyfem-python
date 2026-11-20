@@ -13,9 +13,10 @@ model = polyfem.model()
 body = model.mesh(mesh="part.msh")
 body.material(polyfem.neo_hookean(E=1000, nu=0.3))
 body.dirichlet(value=[0, 0])
+body.rhs(value=[0, -1])
 
 model.solver(linear=polyfem.linear(solver="Eigen::SimplicialLDLT"))
-config = model.config(rhs=[0, -1])
+config = model.config()
 result = solve(cfg=config)
 ```
 
@@ -43,20 +44,19 @@ the mesh is already in Python. This complete example needs no mesh file:
 
 ```python
 import numpy as np
+import polyfem
 from polyfempy import solve
 
 vertices = np.array([[0, 0], [1, 0], [1, 1], [0, 1], [0.5, 0.5]])
 cells = np.array([[0, 1, 4], [1, 2, 4], [2, 3, 4], [3, 0, 4]])
-config = {
-    "materials": {"type": "NeoHookean", "E": 1000, "nu": 0.3},
-    "boundary_conditions": {
-        "dirichlet_boundary": [{"id": "all", "value": [0, 0]}],
-        "rhs": [0, -1],
-    },
-    "solver": {"linear": {"solver": "Eigen::SimplicialLDLT"}},
-}
+model = polyfem.model()
+square = model.mesh(mesh="array.msh")
+square.material(polyfem.neo_hookean(E=1000, nu=0.3))
+square.dirichlet(value=[0, 0])
+square.rhs(value=[0, -1])
+model.solver(linear=polyfem.linear(solver="Eigen::SimplicialLDLT"))
 
-result = solve(vertices, cells, cfg=config)
+result = solve(vertices, cells, cfg=model.config())
 print(f"Largest displacement component: {abs(result.sol).max():.8g}")
 ```
 
@@ -151,39 +151,40 @@ one boundary ID, so the condition applies to both.
 
 ## Body loads
 
-For a uniform load across the model:
+Set the force on each body. Two beams can have different loads:
 
 ```python
-config = model.config(rhs=[0, -1])
-```
-
-For two bodies named `first` and `second` in the same model:
-
-```python
-first.rhs(value=[0, -1])
-second.rhs(value=[0, 0])
+beam.rhs(value=[0, -1000])
+another_beam.rhs(value=[200, 0])
 config = model.config()
 ```
 
-Choose one of these load scopes per model. Supplying both a global RHS and body-specific RHS raises an error.
+For equal loads on two independent beams, call `.rhs(value=[0, -1000])` on both.
+One call on a `mesh_array` applies to every copy. Meshes that share a volume
+with `same_volume_as` also share its load.
+
+If both beams receive `[0, -1000]` and they are the only deformable bodies,
+`model.config()` exports `"rhs": [0, -1000]` and preserves the mesh volume
+tags. When only some bodies have a load, or their loads differ, the JSON
+identifies each loaded volume by ID. You can also use `model.rhs([0, -1000])`
+to set a uniform load in one call. Choose one RHS style per model.
 
 ## Time, contact and output
 
 Add these settings to a model with geometry, materials, loads, and constraints
 already configured. A transient elastic model also needs material density.
 For a complete transient example, use the
-[transient square](https://github.com/polyfem/python_data/blob/ffd670690bf20021e1c380d68b0afe845fb275fd/quickstart/transient_elasticity.py).
+[transient square](https://github.com/polyfem/python_data/blob/8fe9d8b9a1935231d1005f4121cf7866131b4497/quickstart/transient_elasticity.py).
 
 ```python
-config = model.config(
-    time=polyfem.time(dt=0.01, tend=0.5, integrator="BDF"),
-    contact=polyfem.contact(enabled=True, dhat=0.001),
-    output=polyfem.output(
-        directory="results/example",
-        json="sim.json",
-        paraview=polyfem.output_paraview(file_name="sim.pvd"),
-    ),
+model.time(dt=0.01, tend=0.5, integrator="BDF")
+model.contact(enabled=True, dhat=0.001)
+model.output(
+    directory="results/example",
+    json="sim.json",
+    paraview=polyfem.output_paraview(file_name="sim.pvd"),
 )
+config = model.config()
 result = solve(cfg=config)
 ```
 
@@ -205,7 +206,7 @@ body = model.mesh(mesh="part.msh")
 body.dirichlet(value=[0, 0])
 model.materials(polyfem.neo_hookean(E=1000, nu=0.3))
 model.space(discr_order=2)
-model.boundary_conditions(rhs=[0, -1])
+body.rhs(value=[0, -1])
 model.output(directory="results/example")
 config = model.config()
 ```

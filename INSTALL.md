@@ -121,7 +121,7 @@ with TemporaryDirectory() as folder:
     square = model.mesh(mesh=str(mesh))
     square.material(polyfem.neo_hookean(E=1000, nu=0.3))
     square.surface_all().dirichlet(value=[0, 0])
-    model.rhs([0, -1])
+    square.rhs(value=[0, -1])
     model.solver(linear=polyfem.linear(solver="Eigen::SimplicialLDLT"))
 
     result = solve(cfg=model.config())

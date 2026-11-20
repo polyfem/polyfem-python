@@ -67,10 +67,9 @@ def test_classic_examples_import_public_polyfem():
 
 
 def test_classic_examples_keep_solver_and_output_explicit():
-    offenders = []
-    for path in _example_source_files():
-        text = path.read_text(encoding="utf-8")
-        if "common_solver" in text or "common_output" in text:
-            offenders.append(path.relative_to(ROOT).as_posix())
-
-    assert offenders == []
+    _require_examples_submodule()
+    for path in CLASSIC_EXAMPLES.glob("[23]D/*_generated_api.py"):
+        source = path.read_text(encoding="utf-8")
+        assert "model.solver(" in source and "model.output(" in source, path.name
+        assert "polyfem_config = model.config()" in source, path.name
+        assert "common_solver" not in source and "common_output" not in source, path.name

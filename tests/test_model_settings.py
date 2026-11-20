@@ -177,3 +177,69 @@ def test_explicit_config_is_still_a_one_time_override():
     assert model.config().as_dict() == before
     model.config(rhs=[0, -1])
     assert model.config().as_dict() == before
+
+
+def test_uniform_body_rhs_tracks_the_current_deformable_geometry():
+    model = polyfem.model()
+    first = model.mesh(mesh="first.msh")
+    first.rhs(value=[0, -1])
+    model.mesh(mesh="wall.obj", is_obstacle=True)
+    single = model.config().as_dict()
+    assert single["boundary_conditions"]["rhs"] == [0, -1]
+    assert "volume_selection" not in single["geometry"][0]
+
+    second = model.mesh_array(mesh="second.msh", array=polyfem.array(size=[2, 1], offset=1))
+    partial = model.config().as_dict()
+    first_id = partial["geometry"][0]["volume_selection"]
+    assert partial["boundary_conditions"]["rhs"] == [{"id": first_id, "value": [0, -1]}]
+    assert "volume_selection" not in partial["geometry"][2]
+
+    second.rhs(value=(0, -1))
+    uniform = model.config().as_dict()
+    assert uniform["boundary_conditions"]["rhs"] == [0, -1]
+    assert all("volume_selection" not in mesh for mesh in uniform["geometry"])
+    assert model.config().as_dict() == uniform
+
+
+def test_uniform_body_rhs_keeps_ids_needed_by_other_settings():
+    model = polyfem.model()
+    first = model.mesh(mesh="first.msh", volume_selection=7)
+    second = model.mesh(mesh="second.msh")
+    third = model.mesh(mesh="third.msh")
+    for body in (first, second, third):
+        body.rhs(value=[0, -1])
+    material = polyfem.neo_hookean(E=1000, nu=0.3)
+    second.material(material)
+    third_id = third.volume_ref.backend_id
+    cfg = model.config(initial_conditions=polyfem.initial_conditions(
+        velocity=[{"id": third_id, "value": [1, 0]}]
+    )).as_dict()
+    assert cfg["boundary_conditions"]["rhs"] == [0, -1]
+    assert [g["volume_selection"] for g in cfg["geometry"]] == [7, cfg["materials"][0]["id"], third_id]
+    assert "volume_selection" not in model.config().as_dict()["geometry"][2]
+
+
+def test_body_rhs_preserves_shared_volumes_and_fe_space():
+    model = polyfem.model()
+    first = model.mesh(mesh="first.msh")
+    first.rhs(value=[0, -1])
+    model.mesh(mesh="second.msh", same_volume_as=first)
+    cfg = model.config().as_dict()
+    assert cfg["boundary_conditions"]["rhs"] == [0, -1]
+    assert cfg["geometry"][0]["volume_selection"] == cfg["geometry"][1]["volume_selection"]
+
+    model = polyfem.model()
+    model.mesh(mesh="solid.msh").rhs(value=[0, -1], fe_space=1)
+    cfg = model.config().as_dict()
+    volume_id = cfg["geometry"][0]["volume_selection"]
+    assert cfg["boundary_conditions"]["rhs"] == [{"id": volume_id, "value": [0, -1], "fe_space": 1}]
+
+
+def test_rejected_body_rhs_keeps_existing_global_rhs_and_mesh_tags():
+    model = polyfem.model()
+    beam = model.mesh(mesh="beam.msh")
+    model.rhs([0, -1])
+    before = model.config().as_dict()
+    with pytest.raises(TypeError, match="rhs"):
+        beam.rhs(value=[1, 0])
+    assert model.config().as_dict() == before

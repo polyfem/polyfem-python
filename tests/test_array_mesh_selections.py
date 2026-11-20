@@ -55,7 +55,8 @@ def test_solve_preserves_automatic_material_and_boundary_links(
     else:
         body.surface_axis(axis="-x", position=0, relative=True).dirichlet(value=[0, 0])
         body.surface_axis(axis="x", position=1, relative=True).neumann(value=[1, 0])
-    config = model.config(rhs=[0, -1])
+    body.rhs(value=[0, -1])
+    config = model.config()
     original = config.as_dict()
     if config_kind == "dict":
         config = copy.deepcopy(original)
@@ -72,6 +73,7 @@ def test_solve_preserves_automatic_material_and_boundary_links(
     assert geometry == original["geometry"][0]
     assert solver.settings["materials"][0]["id"] == geometry["volume_selection"]
     conditions = solver.settings["boundary_conditions"]
+    assert conditions["rhs"] == [0, -1]
     selection = geometry["surface_selection"]
     if whole_boundary:
         assert conditions["dirichlet_boundary"][0]["id"] == selection
@@ -79,7 +81,7 @@ def test_solve_preserves_automatic_material_and_boundary_links(
         assert conditions["dirichlet_boundary"][0]["id"] == selection[0]["id"]
         assert conditions["neumann_boundary"][0]["id"] == selection[1]["id"]
         assert selection[0]["id"] != selection[1]["id"]
-    assert model.config(rhs=[0, -1]).as_dict() == original
+    assert model.config().as_dict() == original
     if config_kind == "dict":
         assert config == original
 
@@ -172,7 +174,8 @@ def test_native_array_selections_match_a_file_solve(tmp_path, monkeypatch, whole
     else:
         body.surface_axis(axis="-x", position=0, relative=True).dirichlet(value=[0, 0])
     model.solver(linear=polyfem.linear(solver="Eigen::SimplicialLDLT"))
-    config = model.config(rhs=[0, -1])
+    body.rhs(value=[0, -1])
+    config = model.config()
 
     file_result = solve(cfg=config)
     # The array path must not open the configured FEM file.

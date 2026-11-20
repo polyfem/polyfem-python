@@ -30,7 +30,7 @@ left = beam.surface_axis(axis="-x", position=0.0)
 left.dirichlet(value=[0, 0])
 
 # Apply a downward body force (N/m^3).
-model.rhs([0, -1000])
+beam.rhs(value=[0, -1000])
 model.solver(linear=polyfem.linear(solver="Eigen::SimplicialLDLT"))
 
 result = solve(cfg=model.config())
@@ -50,21 +50,21 @@ Largest displacement component: 0.003648 m
 ```
 
 Try changing `E` to adjust the material stiffness, or change the load in
-`model.rhs(...)`. The [complete script](https://github.com/polyfem/python_data/blob/6b4751b9c3f40fb9653601efe32ce6b6d0ead96f/quickstart/beam.py)
+`beam.rhs(...)`. The [complete script](https://github.com/polyfem/python_data/blob/8fe9d8b9a1935231d1005f4121cf7866131b4497/quickstart/beam.py)
 also works when run from another directory, using the mesh beside it.
 
 `result.sol` is the raw finite-element solution; do not assume that each row
 corresponds to a mesh vertex. For a small check that creates its own mesh,
 run the [installation self-check](INSTALL.md#check-the-installation).
 
-For larger models, see the [classic example guide](https://github.com/polyfem/python_data/blob/ffd670690bf20021e1c380d68b0afe845fb275fd/README.md) and the
-[pinned example sources](https://github.com/polyfem/python_data/tree/ffd670690bf20021e1c380d68b0afe845fb275fd/classic_example).
+For larger models, see the [classic example guide](https://github.com/polyfem/python_data/blob/8fe9d8b9a1935231d1005f4121cf7866131b4497/README.md) and the
+[pinned example sources](https://github.com/polyfem/python_data/tree/8fe9d8b9a1935231d1005f4121cf7866131b4497/classic_example).
 These reference examples require their mesh data and may select linear solvers
 that are not enabled in every backend build.
 
 Download either of these scripts and run it with Python in the same environment:
-[static elasticity](https://github.com/polyfem/python_data/blob/ffd670690bf20021e1c380d68b0afe845fb275fd/quickstart/static_elasticity.py) and
-[transient elasticity](https://github.com/polyfem/python_data/blob/ffd670690bf20021e1c380d68b0afe845fb275fd/quickstart/transient_elasticity.py).
+[static elasticity](https://github.com/polyfem/python_data/blob/8fe9d8b9a1935231d1005f4121cf7866131b4497/quickstart/static_elasticity.py) and
+[transient elasticity](https://github.com/polyfem/python_data/blob/8fe9d8b9a1935231d1005f4121cf7866131b4497/quickstart/transient_elasticity.py).
 Both create their own mesh and use `Eigen::SimplicialLDLT`. The transient example
 also shows time settings and an output directory.
 

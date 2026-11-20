@@ -1,0 +1,74 @@
+[build-system]
+requires = ["setuptools>=77", "wheel", "nanobind>=2.0.0", "cmake>=3.25"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "polyfempy"
+version = "0.8"
+description = "PolyFEM Python bindings"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE", "polyfem/LICENSE", "python-from-jse/LICENSE"]
+authors = [
+  { name = "Zizhou Huang", email = "zizhou@nyu.edu" },
+]
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.23",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+[project.optional-dependencies]
+io = [
+    "meshio>=5.0.0",
+]
+visualization = [
+    "matplotlib>=3.5",
+]
+dev = [
+    "pytest>=7.0",
+    "setuptools>=77",
+    "build>=1",
+    "ruff>=0.17.5,<0.18",
+]
+test = [
+    "pytest>=7.0",
+    "setuptools>=77",
+]
+all = [
+    "matplotlib>=3.5",
+    "meshio>=5.0.0",
+    "pytest>=7.0",
+]
+
+[project.scripts]
+polyfempy = "polyfempy.cli:main"
+
+[project.urls]
+Homepage = "https://polyfem.github.io/"
+Source = "https://github.com/polyfem/polyfem-python"
+Issues = "https://github.com/polyfem/polyfem-python/issues"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.package-data]
+"polyfempy.generated_api" = ["*_manifest.json"]
+
+[tool.pyright]
+include = ["python", "tools", "tests", "setup.py", "python-from-jse/generator", "python-from-jse/tools", "python-from-jse/validators", "python-from-jse/tests", "python-from-jse/examples"]
+exclude = ["python/polyfempy/generated_api", "**/__pycache__", "**/*.egg-info"]
+extraPaths = ["python", "examples/classic_example"]
+executionEnvironments = [
+    { root = "python-from-jse", extraPaths = ["python-from-jse", "python-from-jse/generator", "python-from-jse/tests"] },
+    { root = ".", extraPaths = ["python", "examples/classic_example"] },
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["python"]

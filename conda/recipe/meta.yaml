@@ -1,0 +1,57 @@
+{% set version = "0.8" %}
+
+package:
+  name: polyfempy
+  version: {{ version }}
+
+source:
+  url: {{ environ["POLYFEMPY_SDIST_URL"] }}
+  sha256: {{ environ["POLYFEMPY_SDIST_SHA256"] }}
+
+build:
+  number: 0
+  skip: true  # [py<310]
+  script_env:
+    - N_THREADS=1
+    - CPM_SOURCE_CACHE
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    - cmake >=3.25
+    - ninja
+    - git
+  host:
+    - python
+    - pip
+    - setuptools >=77
+    - wheel
+    - nanobind >=2
+    - numpy >=1.23
+  run:
+    - python
+    - numpy >=1.23
+
+test:
+  requires:
+    - pip
+  source_files:
+    - README.md
+    - INSTALL.md
+    - tools/check_installed_package.py
+    - examples/quickstart/*.py
+    - examples/quickstart/*.obj
+  commands:
+    - python -m pip check
+    - python -I tools/check_installed_package.py --readme README.md --example examples/quickstart/beam.py --example examples/quickstart/static_elasticity.py --example examples/quickstart/transient_elasticity.py
+
+about:
+  home: https://polyfem.github.io/
+  dev_url: https://github.com/polyfem/polyfem-python
+  license: MIT
+  license_file:
+    - LICENSE
+    - polyfem/LICENSE
+    - python-from-jse/LICENSE
+  summary: Python model-building API and native solver bindings for PolyFEM

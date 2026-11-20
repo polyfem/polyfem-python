@@ -1,0 +1,20 @@
+include CMakeLists.txt API.md BUILD.md INSTALL.md TESTING.md cibuildwheel.toml
+recursive-include conda *.md *.yaml *.sh *.bat
+recursive-include examples/quickstart *.py *.obj
+recursive-include cmake *.cmake
+recursive-include src CMakeLists.txt *.cpp *.hpp *.h
+include polyfem/CMakeLists.txt polyfem/LICENSE
+graft polyfem/cmake
+graft polyfem/src
+graft polyfem/json-specs
+include python-from-jse/LICENSE
+include python-from-jse/generator/__init__.py
+include python-from-jse/generator/model_builder.py
+include python-from-jse/generator/id_relationships.py
+include python-from-jse/generator/selection_refs.py
+recursive-include python/polyfempy/generated_api *.py *_manifest.json
+include tools/check_installed_package.py
+
+# Repository tests require development tools and reference data not shipped here.
+prune tests
+global-exclude __pycache__ *.py[cod] .DS_Store

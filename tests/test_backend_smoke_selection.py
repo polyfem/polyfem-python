@@ -26,16 +26,8 @@ def _fake_package(root, marker="selected", *, native_path=None, available=True):
     native = native_path or package / ("polyfempy" + EXTENSION_SUFFIXES[0])
     native.write_bytes(b"native test fixture")
     (package / "__init__.py").write_text(
-        "from types import SimpleNamespace\n"
-        f"_core = SimpleNamespace(__file__={str(native)!r})\n"
-        f"def cpp_backend_available(): return {available!r}\n"
-        "def cpp_backend_error(): return 'test backend unavailable'\n",
-        encoding="utf-8",
-    )
-    (package / "cli.py").write_text(
-        "def main(args):\n"
-        f"    print({marker!r})\n"
-        "    return 0\n",
+        "import sys\nfrom types import SimpleNamespace\n"
+        + (f"sys.modules[__name__ + '.polyfempy'] = SimpleNamespace(__file__={str(native)!r})\n" if available else ""),
         encoding="utf-8",
     )
     return native
@@ -56,11 +48,6 @@ def test_selected_build_wins_over_pythonpath_and_working_directory(smoke, tmp_pa
     assert Path(info["native"]) == native.resolve()
     assert info["sha256"] == hashlib.sha256(native.read_bytes()).hexdigest()
 
-    solve = smoke._run_backend(selected, ["solve"], cwd=old_cwd, expected_backend=info)
-    assert solve.returncode == 0, solve.stderr
-    assert "selected" in solve.stdout
-    assert "OLD_ENV_USED" not in solve.stdout
-    assert "OLD_CWD_USED" not in solve.stdout
 
 
 def test_missing_selection_skips_without_probing_a_backend(smoke, tmp_path, monkeypatch):

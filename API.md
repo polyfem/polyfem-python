@@ -1,12 +1,12 @@
 # Forward API
 
-For a complete example with a supplied mesh, use the [README beam](README.md#run-a-forward-simulation).
+For a complete NumPy example, see the [README](README.md#run-a-simulation).
 This guide shows API patterns. Supply your own mesh paths; `part.msh` below
 must be a 2D mesh. Later snippets are alternatives, not one script to run in
-sequence. They assume `import polyfem` and a fresh `model` with the named bodies.
+sequence. They assume `import polyfempy as polyfem` and a fresh `model` with the named bodies.
 
 ```python
-import polyfem
+import polyfempy as polyfem
 from polyfempy import solve
 
 model = polyfem.model()

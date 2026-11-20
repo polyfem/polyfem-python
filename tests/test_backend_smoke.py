@@ -8,6 +8,7 @@ import pytest
 
 _BACKEND_RUNNER = """
 import hashlib
+import importlib
 import json
 from importlib.machinery import EXTENSION_SUFFIXES
 from pathlib import Path
@@ -23,9 +24,11 @@ import polyfempy as pf
 package_path = Path(pf.__file__).resolve()
 if package_path != expected_package.resolve():
     raise RuntimeError(f"Loaded package {package_path}; expected {expected_package}")
-if not pf.cpp_backend_available():
-    raise RuntimeError(f"Native backend is unavailable: {pf.cpp_backend_error()}")
-native_path = Path(pf._core.__file__).resolve()
+try:
+    native = importlib.import_module("polyfempy.polyfempy")
+except ImportError as exc:
+    raise RuntimeError(f"Native backend is unavailable: {exc}") from exc
+native_path = Path(native.__file__).resolve()
 if native_path.parent != expected_package.parent.resolve():
     raise RuntimeError(f"Loaded backend outside selected package: {native_path}")
 if not any(native_path.name.endswith(suffix) for suffix in EXTENSION_SUFFIXES):
@@ -42,8 +45,16 @@ if expected is not None and info != expected:
 print(json.dumps(info), flush=True)
 
 if len(sys.argv) > 3:
-    from polyfempy.cli import main
-    raise SystemExit(main(sys.argv[3:]))
+    # Reference JSON goes directly to the native solver, independently of builders.
+    values = sys.argv[3:]
+    config = Path(values[1]).resolve()
+    payload = json.loads(config.read_text())
+    payload["root_path"] = str(config)
+    payload.setdefault("output", {})["directory"] = values[values.index("--output-dir") + 1] if "--output-dir" in values else "."
+    solver = native.Solver()
+    solver.set_settings(json.dumps(payload), strict_validation=True)
+    solver.load_mesh_from_settings()
+    solver.solve(log_level=2)
 """
 
 

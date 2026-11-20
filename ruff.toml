@@ -9,5 +9,5 @@ extend-exclude = ["python/polyfempy/generated_api", "python-from-jse", "examples
 select = ["E4", "E7", "E9", "F"]
 
 [lint.isort]
-known-first-party = ["polyfem", "polyfempy"]
+known-first-party = ["polyfempy"]
 

@@ -2,14 +2,11 @@
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 
 import numpy as np
 
 _REPO = Path(__file__).resolve().parents[1]
-if str(_REPO / "python") not in sys.path:
-    sys.path.insert(0, str(_REPO / "python"))
 
 from polyfempy.runtime.result import Result  # noqa: E402
 

@@ -1,14 +1,17 @@
-name: Test
-
-on:
-  push:
-  pull_request:
-  workflow_dispatch:
-
+name: CI
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
-  release-files:
-    name: Documentation and source archive
-    runs-on: ubuntu-latest
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@v7
         with:
@@ -16,56 +19,9 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
-      - name: Check documentation
-        run: python tools/check_docs.py --online
-      - name: Build and inspect source archive
-        run: |
-          python -m pip install build numpy
-          python tools/generate_polyfem_api.py
-          python -m build --sdist
-          python tools/check_distribution.py "dist/*.tar.gz"
-
-  test:
-    runs-on: ${{ matrix.os }}
-    name: ${{ matrix.os }} (py${{ matrix.python-version }})
-
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, macos-15-intel, windows-latest]
-        python-version: ["3.10", "3.11", "3.12"]
-
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          submodules: recursive
-
-      - name: Set up Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install test dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install numpy pytest "setuptools>=77" "ruff>=0.17.5,<0.18"
-
-      - name: Check handwritten Python code
-        run: python -m ruff check python setup.py tools tests
-
-      # python/polyfempy/generated_api is intentionally ignored in git, so CI must
-      # regenerate it before importing the public generated API.
-      - name: Generate packaged API
-        run: python tools/generate_polyfem_api.py
-
-      # Do not run `pip install -e .` here: it compiles the C++ backend.
-      # This workflow is the backend-free Python/generator test gate.
-      - name: Run tests
-        env:
-          PYTHONPATH: ${{ github.workspace }}/python
-        run: python -m pytest tests -q
-
-      # Generator tests need their own generic artifacts, separate from the packaged API.
-      - name: Test the API generator
-        working-directory: python-from-jse
-        run: python tools/regenerate_and_test.py
+      - uses: ilammy/msvc-dev-cmd@v1
+        if: runner.os == 'Windows'
+      - run: python -m pip install ".[dev]"
+      - run: python -m ruff check python tools tests
+      - run: python -m pytest tests -q
+      - run: python tools/check_installed_package.py

@@ -8,14 +8,11 @@ constructing a second config object.
 from __future__ import annotations
 
 import copy
-import sys
 import tempfile
 import unittest
 from pathlib import Path
 
 _REPO = Path(__file__).resolve().parents[1]
-if str(_REPO / "python") not in sys.path:
-    sys.path.insert(0, str(_REPO / "python"))
 
 from polyfempy.runtime._solve_contract import (  # noqa: E402
     generated_payload_from_config,
@@ -309,7 +306,7 @@ class GeneratedPayloadTests(unittest.TestCase):
                 self.assertNotIn("advanced", prepared["solver"]["nonlinear"])
 
     def test_model_solver_preserves_f_delta_tol_for_the_backend(self):
-        import polyfem
+        import polyfempy as polyfem
 
         model = polyfem.model()
         model.mesh(mesh="triangle.obj")

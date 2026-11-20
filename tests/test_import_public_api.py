@@ -99,3 +99,24 @@ def test_solve_module_all_only_recommends_solve():
     assert solve_module.__all__ == ["solve"]
     assert "sampled_vtu_fallback" not in inspect.signature(solve_module.solve).parameters
     assert not hasattr(solve_module, "populate_sampled_history")
+
+
+def test_import_does_not_load_native_extension():
+    root = Path(__file__).resolve().parents[1]
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(root / "python")
+    code = """
+import importlib.abc
+import sys
+class RejectNative(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path, target=None):
+        if fullname == 'polyfempy.polyfempy':
+            raise AssertionError('Import eagerly loaded native bindings')
+sys.meta_path.insert(0, RejectNative())
+import polyfempy
+assert callable(polyfempy.model)
+assert callable(polyfempy.solve)
+assert 'Path' not in polyfempy.__all__
+assert 'builtins' not in polyfempy.__all__
+"""
+    subprocess.run([sys.executable, "-c", code], cwd=root, env=env, check=True)

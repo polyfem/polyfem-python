@@ -7,7 +7,6 @@ objects directly. It no longer bridges through SimulationConfig.
 from __future__ import annotations
 
 import json
-import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -15,8 +14,6 @@ from pathlib import Path
 import numpy as np
 
 _REPO = Path(__file__).resolve().parents[1]
-if str(_REPO / "python") not in sys.path:
-    sys.path.insert(0, str(_REPO / "python"))
 
 from polyfempy.runtime._solve_backend import configure_solver  # noqa: E402
 from polyfempy.runtime._solve_contract import (  # noqa: E402

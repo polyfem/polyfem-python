@@ -10,10 +10,10 @@ import zipfile
 
 
 PACKAGE_FILES = {
-    "polyfempy/__init__.py", "polyfempy/__main__.py", "polyfempy/cli.py", "polyfempy/runtime/solve.py",
+    "polyfempy/__init__.py", "polyfempy/runtime/solve.py",
     "polyfempy/runtime/result.py", "polyfempy/runtime/_solve_contract.py",
     "polyfempy/runtime/__init__.py", "polyfempy/runtime/_solve_backend.py",
-    "polyfempy/runtime/_runtime.py", "polyfempy/runtime/tensor.py",
+    "polyfempy/runtime/tensor.py",
     "polyfempy/generated_api/__init__.py",
     "polyfempy/generated_api/generated_api.py",
     "polyfempy/generated_api/generated_class.py",
@@ -23,12 +23,18 @@ PACKAGE_FILES = {
 }
 BUILDER_FILES = {"__init__.py", "model_builder.py", "id_relationships.py", "selection_refs.py"}
 SOURCE_FILES = {
-    "pyproject.toml", "setup.py", "CMakeLists.txt", "LICENSE", "README.md", "INSTALL.md", "API.md",
-    "src/binding.cpp", "polyfem/CMakeLists.txt", "polyfem/LICENSE",
-    "polyfem/json-specs/input-spec.json", "python-from-jse/LICENSE",
-    "python/polyfem/__init__.py", "tools/check_installed_package.py",
-    "examples/quickstart/beam.py", "examples/quickstart/beam.obj",
-    "examples/quickstart/static_elasticity.py", "examples/quickstart/transient_elasticity.py",
+    "pyproject.toml", "CMakeLists.txt", "LICENSE", "README.md", "INSTALL.md", "API.md",
+    "src/binding.cpp",
+    "python-from-jse/LICENSE",
+    "tools/check_installed_package.py",
+    "src/CMakeLists.txt", "src/binding_wrapper.hpp", "src/state/CMakeLists.txt",
+    "src/state/state.cpp", "src/state/binding.hpp", "src/state/array_mesh_resources.hpp",
+    "cmake/recipes/CPM.cmake",
+    "cmake/recipes/nanobind.cmake",
+    "cmake/recipes/polyfem.cmake",
+    "cmake/patches/polyfem.patch",
+    "tools/generate_polyfem_api.py", "generator-config/api_aliases.json",
+    "generator-config/id_relationships.json",
 }
 
 
@@ -44,7 +50,8 @@ def check_files(names: set[str], *, wheel: bool) -> None:
     builder = "polyfempy/generated_api/generator" if wheel else "python-from-jse/generator"
     package_files = PACKAGE_FILES if wheel else {f"python/{name}" for name in PACKAGE_FILES}
     required = package_files | {f"{builder}/{name}" for name in BUILDER_FILES}
-    required |= {"polyfem/__init__.py"} if wheel else SOURCE_FILES
+    if not wheel:
+        required |= SOURCE_FILES
     missing = required - names
     if missing:
         raise ValueError("Missing distribution files: " + ", ".join(sorted(missing)))

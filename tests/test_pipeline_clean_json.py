@@ -11,14 +11,11 @@ These tests never touch the C++ backend. They only exercise pure Python stages.
 from __future__ import annotations
 
 import copy
-import sys
 import tempfile
 import unittest
 from pathlib import Path
 
 _REPO = Path(__file__).resolve().parents[1]
-if str(_REPO / "python") not in sys.path:
-    sys.path.insert(0, str(_REPO / "python"))
 
 from polyfempy.runtime._solve_contract import (  # noqa: E402
     clean_json_for_cpp,

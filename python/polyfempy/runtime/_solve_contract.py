@@ -77,7 +77,7 @@ def prepare_generated_backend_payload(
         _resolve_collision_mesh_paths_in_place(backend, str(resolved_root_path))
     _normalize_nonlinear_tolerance_names(backend)
     _restore_backend_payload_semantics(backend)
-    return _drop_none(backend)
+    return clean_json_for_cpp(backend)
 
 
 _SOLVER_ADVANCED_GENERATED_DEFAULTS = {
@@ -236,20 +236,10 @@ def _rename_key(payload: Dict[str, Any], old: str, new: str) -> None:
         payload.pop(old, None)
 
 
-def _drop_none(obj: Any) -> Any:
-    if isinstance(obj, dict):
-        return {
-            key: cleaned
-            for key, value in obj.items()
-            if (cleaned := _drop_none(value)) is not None
-        }
-    if isinstance(obj, list):
-        return [cleaned for value in obj if (cleaned := _drop_none(value)) is not None]
-    return obj
-
-
 def _resolve_geometry_mesh_paths_in_place(payload: Dict[str, Any], root_path: str) -> None:
     geometry = payload.get("geometry")
+    if isinstance(geometry, dict):
+        geometry = [geometry]
     if not isinstance(geometry, list):
         return
 
@@ -571,6 +561,7 @@ def process_json_config(full_json: Dict[str, Any]) -> Dict[str, Any]:
     root_path = processed.get("root_path")
     if root_path:
         _resolve_geometry_mesh_paths_in_place(processed, str(root_path))
+        _resolve_collision_mesh_paths_in_place(processed, str(root_path))
     return processed
 
 

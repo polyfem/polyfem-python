@@ -20,21 +20,12 @@ from ._solve_contract import MeshSource, build_canonical_solver_settings
 def build_solver():
     """Instantiate the compiled VarForm Solver binding."""
     try:
-        import polyfempy as pf
-    except Exception as exc:  # pragma: no cover - defensive
+        core = importlib.import_module("polyfempy.polyfempy")
+    except ImportError as exc:
         raise RuntimeError(
-            "polyfempy bindings not found. Please install/compile them first."
+            "C++ backend not loaded. Install polyfempy with pip or build from source."
         ) from exc
 
-    if not getattr(pf, "cpp_backend_available", lambda: False)():
-        err = getattr(pf, "cpp_backend_error", lambda: None)()
-        raise RuntimeError(
-            "C++ backend not loaded. Install a wheel for your Python version "
-            "and platform, or follow BUILD.md to build from source. "
-            f"Import error: {err}"
-        )
-
-    core = importlib.import_module("polyfempy.polyfempy")
     if not hasattr(core, "Solver"):
         raise RuntimeError("Compiled VarForm backend must expose Solver.")
 

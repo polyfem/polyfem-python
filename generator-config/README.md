@@ -17,7 +17,7 @@ remain supported for compatibility.
 Root configuration sections also generate methods on the model builder:
 
 ```python
-import polyfem
+import polyfempy as polyfem
 
 model = polyfem.model()
 model.time(dt=0.01, tend=0.5, integrator="BDF")
@@ -45,7 +45,7 @@ Maintain this behavior in `python-from-jse/generator/JsonToTreeClass.py` and
 repository root, regenerate with:
 
 ```powershell
-python tools/generate_polyfem_api.py
+python -m pip install -e .
 ```
 
 ## Geometry and ID binding

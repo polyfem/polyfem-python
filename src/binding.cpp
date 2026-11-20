@@ -1,18 +1,4 @@
-#include <stdexcept>
-
 #include "binding_wrapper.hpp"
-
-#include "mesh/binding.hpp"
 #include "state/binding.hpp"
 
-PY_MODULE(polyfempy, m)
-{
-  define_pde_types(m);
-
-  define_solver(m);
-  define_solve(m);
-
-  define_mesh(m);
-
-  m.def("version", []() { return "polyfempy nanobind backend"; }, "Get version information");
-}
+NB_MODULE(polyfempy, m) { define_solver(m); }

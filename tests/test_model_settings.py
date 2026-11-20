@@ -2,7 +2,7 @@
 
 import pytest
 
-import polyfem
+import polyfempy as polyfem
 
 
 @pytest.mark.parametrize(

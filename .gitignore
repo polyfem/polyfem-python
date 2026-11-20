@@ -105,3 +105,9 @@ Thumbs.db
 
 # Local experiments
 /experiment/
+*.pvd
+*.obj
+*.vtu
+
+# Former backend checkout; backend sources are now fetched by CPM.
+/polyfem/

@@ -6,7 +6,7 @@ import json
 import numpy as np
 import pytest
 
-import polyfem
+import polyfempy as polyfem
 from polyfempy import solve
 from polyfempy.runtime import _solve_backend as backend
 
@@ -152,10 +152,7 @@ def test_file_mesh_still_uses_the_file_loader(monkeypatch):
 
 @pytest.mark.parametrize("whole_boundary", [False, True])
 def test_native_array_selections_match_a_file_solve(tmp_path, monkeypatch, whole_boundary):
-    import polyfempy
-
-    if not polyfempy.cpp_backend_available():
-        pytest.skip("C++ backend is unavailable; array selection integration requires a native build")
+    pytest.importorskip("polyfempy.polyfempy")
 
     monkeypatch.chdir(tmp_path)
     mesh = tmp_path / "square.obj"
